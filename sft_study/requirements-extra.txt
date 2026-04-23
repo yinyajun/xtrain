@@ -1,0 +1,11 @@
+# Optional extras for Linux + NVIDIA CUDA environments.
+# Install this only when you want extra GPU acceleration such as FlashAttention 2.
+# Linux
+# CUDA 12+
+# PyTorch 2.2+
+# 通常还要 ninja、packaging、psutil
+
+ninja>=1.11.0
+packaging>=24.0
+psutil>=6.0.0
+flash-attn>=2.7.0

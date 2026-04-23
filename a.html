@@ -1,0 +1,2732 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tomo Cycle 06 — Signals</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=M+PLUS+Rounded+1c:wght@700;800&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+:root {
+  --n-0:#FFFFFF;--n-50:#FAFAF7;--n-100:#F7F6F1;--n-150:#F0EFE9;--n-200:#E8E7E0;
+  --n-300:#D4D2C9;--n-400:#B5B3A8;--n-500:#918F84;--n-600:#6B6964;--n-700:#4A4844;
+  --n-800:#33312E;--n-900:#242320;--n-950:#1C1C1A;
+  --teal-50:#ECFDF5;--teal-100:#D1FAE5;--teal-200:#A7F3D0;--teal-400:#34D399;
+  --teal-500:#2BA88C;--teal-600:#249577;
+  --peach-50:#FFF7ED;--peach-100:#FFEDD5;--peach-200:#FDD5B8;--peach-300:#FDBA8C;
+  --peach-400:#F5A678;--peach-500:#F08C55;
+  --blue-50:#EFF6FF;--blue-100:#DBEAFE;--blue-500:#3B82F6;--blue-600:#2563EB;
+  --purple-50:#F5F3FF;--purple-100:#EDE9FE;--purple-500:#7C3AED;--purple-600:#6D28D9;
+  --amber-50:#FFFBEB;--amber-100:#FEF3C7;--amber-200:#FDE68A;--amber-500:#F59E0B;--amber-600:#D97706;
+  --font-body:'Noto Sans SC','Outfit',system-ui,-apple-system,sans-serif;
+  --font-en:'Outfit',system-ui,sans-serif;
+  --font-brand:'M PLUS Rounded 1c',sans-serif;
+  --r-sm:6px;--r-md:8px;--r-lg:12px;--r-xl:16px;--r-2xl:20px;
+  --shadow-card:0 1px 3px rgba(28,28,26,0.06);
+  --shadow-card-hover:0 2px 8px rgba(28,28,26,0.06),0 8px 24px rgba(28,28,26,0.08);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:var(--font-body);background:var(--n-50);color:var(--n-950);-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+
+/* ═══ Top Nav ═══ */
+.top-nav{position:sticky;top:0;z-index:200;background:rgba(250,250,247,0.92);backdrop-filter:blur(14px);border-bottom:1px solid var(--n-200);padding:0 32px;}
+.top-nav-inner{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:24px;height:52px;}
+.top-nav-brand{font-family:var(--font-brand);font-size:15px;font-weight:800;color:var(--n-800);letter-spacing:-0.02em;margin-right:12px;white-space:nowrap;}
+.top-tab{font-family:var(--font-body);font-size:13.5px;font-weight:500;color:var(--n-500);padding:14px 4px;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:all 150ms;white-space:nowrap;}
+.top-tab:hover{color:var(--n-700);}
+.top-tab.active{color:var(--n-900);font-weight:600;border-bottom-color:var(--teal-500);}
+
+/* ═══ Spec Content ═══ */
+.spec-section{display:none;animation:fadeIn 200ms ease;}
+.spec-section.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.prose{max-width:740px;margin:0 auto;padding:40px 32px 56px;}
+.prose-label{font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal-500);margin-bottom:12px;}
+.prose h1{font-size:26px;font-weight:700;color:var(--n-900);line-height:1.4;margin-bottom:24px;}
+.prose h2{font-size:18px;font-weight:700;color:var(--n-900);margin:32px 0 12px;}
+.prose h3{font-size:15px;font-weight:600;color:var(--n-800);margin:24px 0 8px;}
+.prose p{font-size:15px;color:var(--n-700);line-height:1.8;margin-bottom:16px;}
+.prose p strong{color:var(--n-900);font-weight:600;}
+.prose ul,.prose ol{font-size:14.5px;color:var(--n-700);line-height:1.7;margin:0 0 16px 20px;}
+.prose li{margin-bottom:6px;}
+.prose code{font-size:13px;background:var(--n-100);padding:2px 6px;border-radius:4px;font-family:'SF Mono','Fira Code',monospace;color:var(--n-700);}
+.divider{width:40px;height:3px;background:var(--teal-500);border-radius:2px;margin:28px 0;}
+
+.callout{background:var(--n-100);border-left:3px solid var(--teal-500);border-radius:0 var(--r-md) var(--r-md) 0;padding:14px 18px;font-size:14.5px;color:var(--n-700);line-height:1.7;margin:16px 0;}
+.callout.amber{border-left-color:var(--amber-500);}
+.callout.blue{border-left-color:var(--blue-500);}
+
+/* Term card */
+.term-grid{display:grid;grid-template-columns:140px 1fr;gap:0;margin:20px 0;border:1px solid var(--n-200);border-radius:var(--r-xl);overflow:hidden;}
+.term-key{background:var(--n-100);padding:12px 16px;font-size:13px;font-weight:600;color:var(--n-800);border-bottom:1px solid var(--n-200);display:flex;align-items:center;}
+.term-val{padding:12px 16px;font-size:13.5px;color:var(--n-700);line-height:1.6;border-bottom:1px solid var(--n-150);}
+.term-grid>:nth-last-child(-n+2){border-bottom:none;}
+
+/* Comparison cards */
+.cmp-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0;}
+.cmp-card{border-radius:var(--r-xl);padding:18px 20px;border:1.5px solid;}
+.cmp-card-label{font-size:11px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;}
+.cmp-card h4{font-size:15px;font-weight:600;color:var(--n-900);margin-bottom:6px;}
+.cmp-card p{font-size:13px;color:var(--n-600);line-height:1.6;margin-bottom:0;}
+.cmp-card.teal{background:var(--teal-50);border-color:var(--teal-200);}.cmp-card.teal .cmp-card-label{color:var(--teal-600);}
+.cmp-card.peach{background:var(--peach-50);border-color:var(--peach-200);}.cmp-card.peach .cmp-card-label{color:var(--peach-500);}
+.cmp-card.amber{background:var(--amber-50);border-color:var(--amber-200);}.cmp-card.amber .cmp-card-label{color:var(--amber-600);}
+.cmp-card.blue{background:var(--blue-50);border-color:var(--blue-100);}.cmp-card.blue .cmp-card-label{color:var(--blue-600);}
+
+.spec-table{width:100%;border-collapse:collapse;font-size:13.5px;margin:16px 0;}
+.spec-table th{text-align:left;font-weight:600;color:var(--n-600);font-size:11px;letter-spacing:0.06em;text-transform:uppercase;padding:8px 12px;border-bottom:2px solid var(--n-200);}
+.spec-table td{padding:10px 12px;border-bottom:1px solid var(--n-150);color:var(--n-700);line-height:1.5;}
+.spec-table td:first-child{font-weight:500;color:var(--n-800);}
+
+/* ═══════════════════════════════════════
+   INTERACTIVE MOCK
+   ═══════════════════════════════════════ */
+.mock-frame{max-width:1140px;margin:0 auto;padding:20px 24px 48px;}
+.mock-container{border:1px solid var(--n-200);border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(28,28,26,0.08);display:flex;height:calc(100vh - 100px);min-height:680px;background:var(--n-50);position:relative;}
+
+/* Sidebar */
+.m-sidebar{width:210px;background:var(--n-100);border-right:1px solid var(--n-200);display:flex;flex-direction:column;padding:20px 12px;flex-shrink:0;}
+.m-logo{display:flex;align-items:center;gap:10px;padding:0 8px 24px;}
+.m-logo-circles{position:relative;width:32px;height:32px;}
+.m-logo-c1{width:26px;height:26px;border-radius:50%;background:var(--teal-500);position:absolute;top:0;left:0;}
+.m-logo-c2{width:16px;height:16px;border-radius:50%;background:var(--peach-400);opacity:0.85;position:absolute;bottom:0;right:0;}
+.m-logo-text{font-family:var(--font-brand);font-weight:800;font-size:18px;letter-spacing:-0.02em;color:var(--n-900);}
+.m-nav{display:flex;flex-direction:column;gap:2px;}
+.m-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--r-lg);font-size:14px;font-weight:500;color:var(--n-600);cursor:pointer;transition:all 150ms;text-decoration:none;border:none;background:none;font-family:inherit;width:100%;text-align:left;}
+.m-nav-item:hover{background:var(--n-150);color:var(--n-800);}
+.m-nav-item.active{background:var(--teal-50);color:var(--teal-600);font-weight:600;}
+.m-nav-item .icon{width:20px;height:20px;opacity:0.7;flex-shrink:0;}
+.m-nav-item.active .icon{opacity:1;}
+.m-nav-badge{margin-left:auto;background:var(--teal-500);color:white;font-size:11px;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 6px;}
+.m-account{margin-top:auto;display:flex;align-items:center;gap:10px;padding:12px;border-radius:var(--r-lg);}
+.m-avatar{width:32px;height:32px;border-radius:50%;background:var(--n-300);display:flex;align-items:center;justify-content:center;font-family:var(--font-en);font-size:13px;font-weight:600;color:var(--n-600);}
+.m-account-name{font-size:13px;font-weight:600;color:var(--n-800);}
+.m-account-handle{font-family:var(--font-en);font-size:12px;color:var(--n-500);}
+
+/* Main area */
+.m-main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;}
+.m-header{padding:22px 28px 0;flex-shrink:0;}
+.m-header-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.m-page-title{font-size:20px;font-weight:700;color:var(--n-900);}
+.m-header-meta{font-size:12.5px;color:var(--n-500);}
+.m-filters{display:flex;gap:3px;padding:3px;background:var(--n-150);border-radius:var(--r-lg);width:fit-content;}
+.m-filter{padding:6px 14px;font-size:12.5px;font-weight:500;color:var(--n-500);border-radius:var(--r-md);cursor:pointer;transition:all 150ms;border:none;background:none;font-family:inherit;}
+.m-filter:hover{color:var(--n-700);}
+.m-filter.active{background:var(--n-0);color:var(--n-900);font-weight:600;box-shadow:0 1px 3px rgba(28,28,26,0.08);}
+.m-filter .cnt{margin-left:4px;font-family:var(--font-en);font-size:11px;font-weight:600;color:var(--n-400);}
+.m-filter.active .cnt{color:var(--n-500);}
+
+/* Feed */
+.m-feed{flex:1;overflow-y:auto;padding:18px 28px 28px;}
+.m-feed::-webkit-scrollbar{width:5px;}
+.m-feed::-webkit-scrollbar-track{background:transparent;}
+.m-feed::-webkit-scrollbar-thumb{background:var(--n-300);border-radius:3px;}
+.m-section-label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--n-500);padding:0 4px;margin-bottom:10px;}
+.m-section-label.urgent{color:var(--peach-500);}
+.m-group{margin-bottom:24px;}
+.m-scan{background:var(--n-100);border:1px solid var(--n-200);border-radius:var(--r-2xl);padding:12px 16px;margin-bottom:22px;display:flex;align-items:center;gap:12px;font-size:13px;color:var(--n-600);}
+.m-scan strong{color:var(--n-800);}
+.m-scan-icon{width:32px;height:32px;border-radius:50%;background:var(--teal-50);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--teal-500);}
+
+/* Signal cards */
+.sig{background:var(--n-0);border:1px solid var(--n-200);border-radius:var(--r-2xl);padding:16px 18px;margin-bottom:8px;cursor:pointer;transition:all 200ms cubic-bezier(0.16,1,0.3,1);}
+.sig:hover{border-color:var(--n-300);box-shadow:var(--shadow-card-hover);transform:translateY(-1px);}
+.sig.engage-a{border-color:var(--teal-200);background:linear-gradient(135deg,var(--n-0) 0%,var(--teal-50) 100%);}
+.sig.engage-b{border-color:var(--peach-200);background:linear-gradient(135deg,var(--n-0) 0%,var(--peach-50) 100%);}
+.sig.create{border-color:var(--amber-200);background:linear-gradient(135deg,var(--n-0) 0%,var(--amber-50) 100%);}
+.sig.research{border-color:var(--blue-100);background:linear-gradient(135deg,var(--n-0) 0%,var(--blue-50) 100%);}
+.sig.network{border-color:var(--purple-100);background:linear-gradient(135deg,var(--n-0) 0%,var(--purple-50) 100%);}
+.sig.acted{opacity:0.5;background:var(--n-50);}
+.sig.acted:hover{opacity:0.75;}
+.sig-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px;gap:10px;}
+.sig-badges{display:flex;gap:4px;flex-wrap:wrap;align-items:center;}
+.badge{font-size:10px;font-weight:600;letter-spacing:0.04em;padding:3px 8px;border-radius:99px;}
+/* ── Slot 1: Type badges — visually de-emphasized (filter handle, not primary content) ── */
+.badge.b-type-ea,.badge.b-type-eb,.badge.b-type-c-trend,.badge.b-type-c-idea,.badge.b-type-c-activity,
+.badge.b-type-research,.badge.b-type-network{
+  font-size:9.5px;font-weight:600;padding:2px 7px 2px 14px;
+  background:transparent;position:relative;letter-spacing:0.06em;text-transform:uppercase;
+}
+.badge.b-type-ea::before,.badge.b-type-eb::before,.badge.b-type-c-trend::before,.badge.b-type-c-idea::before,
+.badge.b-type-c-activity::before,.badge.b-type-research::before,.badge.b-type-network::before{
+  content:'';position:absolute;left:5px;top:50%;transform:translateY(-50%);
+  width:6px;height:6px;border-radius:50%;
+}
+.b-type-ea{color:var(--teal-600);}
+.b-type-ea::before{background:var(--teal-500);}
+.b-type-eb{color:var(--peach-500);}
+.b-type-eb::before{background:var(--peach-400);}
+.b-type-c-trend,.b-type-c-idea,.b-type-c-activity{color:var(--amber-600);}
+.b-type-c-trend::before,.b-type-c-idea::before,.b-type-c-activity::before{background:var(--amber-500);}
+.b-type-research{color:var(--blue-600);}
+.b-type-research::before{background:var(--blue-500);}
+.b-type-network{color:var(--purple-600);}
+.b-type-network::before{background:var(--purple-500);}
+
+/* ── Slot 2: Trigger chips (0-2 per card, neutral gray) ── */
+.b-chip{background:var(--n-100);color:var(--n-700);border:1px solid var(--n-200);}
+
+/* Quoted-tweet block (your tweet, then their quote stacked) */
+.tweet.quote-of{border-left:3px solid var(--teal-400);background:var(--n-0);position:relative;}
+.tweet + .tweet.quote-of{margin-top:6px;}
+.tweet.quote-of::before{
+  content:'↰ quoted you';font-size:10px;color:var(--teal-600);font-weight:600;
+  position:absolute;top:-7px;left:10px;background:var(--n-0);padding:0 6px;
+}
+
+/* ── Ask Tomo button (reveal suggestion on demand) ── */
+.ask-btn{
+  width:100%;padding:14px 18px;border-radius:var(--r-xl);
+  border:1.5px dashed var(--n-300);background:var(--n-50);
+  font-family:inherit;font-size:13px;color:var(--n-600);
+  cursor:pointer;transition:all 180ms;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+}
+.ask-btn:hover{border-color:var(--teal-400);background:var(--teal-50);color:var(--teal-700);}
+.ask-btn.amber-ask:hover{border-color:var(--amber-500);background:var(--amber-50);color:var(--amber-600);}
+.ask-container .ask-hidden{display:none;animation:fadeIn 240ms ease;}
+.ask-container.revealed .ask-btn{display:none;}
+.ask-container.revealed .ask-hidden{display:block;}
+.sig-time{font-family:var(--font-en);font-size:11.5px;color:var(--n-500);white-space:nowrap;flex-shrink:0;}
+.sig-time.hot{color:var(--peach-500);font-weight:600;}
+.sig-title{font-size:14px;font-weight:600;color:var(--n-900);line-height:1.45;margin-bottom:3px;}
+.sig-body{font-size:12.5px;color:var(--n-600);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:8px;}
+.sig-why{background:var(--n-50);border-radius:var(--r-lg);padding:8px 12px;margin-bottom:10px;font-size:11.5px;color:var(--n-600);line-height:1.5;}
+.sig-why strong{color:var(--n-800);font-weight:600;}
+
+/* Create Brief — Reference preview (neutral gray, type-tagged) */
+.sig-ref{background:var(--n-100);border-radius:var(--r-lg);padding:8px 12px;margin-bottom:8px;font-size:12px;color:var(--n-700);line-height:1.5;display:flex;align-items:flex-start;gap:8px;}
+.sig-ref-type{font-family:var(--font-en);font-size:9.5px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--amber-600);background:var(--amber-50);padding:2px 6px;border-radius:4px;flex-shrink:0;margin-top:1px;}
+.sig-ref-body{flex:1;min-width:0;}
+.sig-ref-body .ref-author{font-family:var(--font-en);font-size:11.5px;font-weight:600;color:var(--n-700);margin-right:6px;}
+.sig-ref-body .ref-snippet{color:var(--n-600);}
+
+/* Create Brief — Angle hint (teal left-border, tight) */
+.sig-angle{border-left:2px solid var(--teal-400);padding:4px 0 4px 10px;margin-bottom:10px;font-size:12.5px;color:var(--n-800);line-height:1.5;}
+.sig-angle .angle-label{font-family:var(--font-en);font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--teal-600);margin-right:6px;}
+
+/* Async generation zone in detail panel */
+.gen-zone{border:1.5px dashed var(--n-300);border-radius:var(--r-xl);padding:18px;text-align:center;background:var(--n-50);transition:all 200ms;}
+.gen-zone.loading{border-style:solid;border-color:var(--amber-200);background:var(--amber-50);}
+.gen-zone.generated{text-align:left;border-style:solid;border-color:var(--amber-200);background:white;padding:14px 16px;}
+.gen-btn{display:inline-flex;align-items:center;gap:8px;background:var(--teal-500);color:white;border:none;padding:10px 20px;border-radius:var(--r-lg);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background 150ms;}
+.gen-btn:hover{background:var(--teal-600);}
+.gen-btn .sparkle{font-size:15px;}
+.gen-loading{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--amber-600);font-size:13px;font-weight:500;}
+.gen-dot{width:6px;height:6px;border-radius:50%;background:var(--amber-500);animation:genPulse 1.2s infinite ease-in-out;}
+.gen-dot:nth-child(2){animation-delay:0.15s;}
+.gen-dot:nth-child(3){animation-delay:0.3s;}
+@keyframes genPulse{0%,80%,100%{opacity:0.3;transform:scale(0.8);}40%{opacity:1;transform:scale(1);}}
+.gen-output{min-height:80px;outline:none;font-size:13px;color:var(--n-800);line-height:1.6;padding:4px 0;}
+.gen-actions{display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--n-150);}
+.gen-hint{font-size:11px;color:var(--n-500);}
+.gen-rewrite{background:none;border:none;font-size:11.5px;color:var(--teal-600);font-weight:600;cursor:pointer;font-family:inherit;padding:4px 8px;border-radius:4px;}
+.gen-rewrite:hover{background:var(--teal-50);}
+
+/* Suspended badge */
+.sig-suspended{background:var(--n-200);color:var(--n-700);font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:4px;letter-spacing:0.06em;text-transform:uppercase;margin-left:6px;}
+.sig-footer{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--n-500);}
+.sig-footer .src{font-family:var(--font-en);font-weight:500;color:var(--n-600);}
+.sig-footer .metrics{font-family:var(--font-en);}
+.sig-acted{font-size:11px;font-weight:600;color:var(--teal-500);display:flex;align-items:center;gap:4px;}
+
+/* Tweet embed */
+.tweet{background:var(--n-50);border:1px solid var(--n-200);border-radius:var(--r-xl);padding:12px 14px;margin-bottom:10px;}
+.tweet-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.tweet-av{width:22px;height:22px;border-radius:50%;background:var(--n-300);flex-shrink:0;}
+.tweet-av.me{background:var(--teal-200);}
+.tweet-name{font-family:var(--font-en);font-size:12.5px;font-weight:600;color:var(--n-800);}
+.tweet-handle{font-family:var(--font-en);font-size:11.5px;color:var(--n-500);}
+.tweet-text{font-size:13px;color:var(--n-700);line-height:1.6;margin-bottom:6px;}
+.tweet-stats{font-family:var(--font-en);font-size:11px;color:var(--n-400);display:flex;gap:12px;}
+
+/* Detail panel */
+.m-detail{position:absolute;top:0;right:0;width:520px;height:100%;background:var(--n-0);border-left:1px solid var(--n-200);display:flex;flex-direction:column;transform:translateX(100%);transition:transform 280ms cubic-bezier(0.16,1,0.3,1);z-index:30;}
+.m-detail.open{transform:translateX(0);}
+.m-detail-header{padding:16px 20px;border-bottom:1px solid var(--n-150);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.m-detail-header-left{display:flex;align-items:center;gap:8px;}
+.m-close{width:30px;height:30px;border-radius:50%;border:none;background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--n-500);font-size:18px;transition:background 150ms;}
+.m-close:hover{background:var(--n-100);}
+.m-detail-body{flex:1;overflow-y:auto;padding:20px;}
+.m-detail-body::-webkit-scrollbar{width:4px;}
+.m-detail-body::-webkit-scrollbar-thumb{background:var(--n-300);border-radius:2px;}
+.m-detail-section{margin-bottom:20px;}
+.m-detail-label{font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--n-500);margin-bottom:10px;}
+.m-detail-footer{padding:12px 20px;border-top:1px solid var(--n-150);display:flex;gap:10px;align-items:center;flex-shrink:0;}
+.btn{font-family:inherit;font-size:13px;font-weight:600;padding:8px 18px;border-radius:var(--r-md);cursor:pointer;transition:all 150ms;border:none;display:inline-flex;align-items:center;gap:6px;}
+.btn-lg{padding:10px 22px;font-size:14px;border-radius:var(--r-lg);}
+.btn-teal{background:var(--teal-500);color:white;}.btn-teal:hover{background:var(--teal-600);}
+.btn-amber{background:var(--amber-500);color:white;}.btn-amber:hover{background:var(--amber-600);}
+.btn-ghost{background:none;color:var(--n-500);}.btn-ghost:hover{background:var(--n-100);color:var(--n-800);}
+.spacer{flex:1;}
+.hint{font-size:11.5px;color:var(--n-400);}
+
+/* Reply thread */
+.reply-item{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--n-150);}
+.reply-item:last-child{border-bottom:none;}
+.reply-av{width:26px;height:26px;border-radius:50%;background:var(--n-200);flex-shrink:0;margin-top:2px;}
+.reply-content{flex:1;min-width:0;}
+.reply-head{display:flex;align-items:center;gap:6px;margin-bottom:3px;font-size:12px;}
+.reply-name{font-family:var(--font-en);font-weight:600;color:var(--n-800);}
+.reply-handle{font-family:var(--font-en);color:var(--n-500);}
+.reply-tag{font-size:10px;font-weight:600;color:var(--teal-600);background:var(--teal-50);padding:2px 6px;border-radius:4px;}
+.reply-time{font-family:var(--font-en);font-size:10.5px;color:var(--n-400);margin-left:auto;}
+.reply-text{font-size:12.5px;color:var(--n-700);line-height:1.5;}
+
+/* Selectable reply items (multi-reply Engage detail) */
+.reply-item.selectable{cursor:pointer;border-radius:var(--r-xl);padding:10px 12px;margin:0 -12px;border:1.5px solid transparent;border-bottom:none;transition:background 150ms,border-color 150ms;}
+.reply-item.selectable:hover{background:var(--n-50);border-color:var(--n-200);}
+.reply-item.selectable.selected{background:var(--teal-50);border-color:var(--teal-200);}
+.reply-item.selectable + .reply-item.selectable{margin-top:6px;}
+.reply-radio{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--n-300);flex-shrink:0;margin-top:5px;transition:all 150ms;display:flex;align-items:center;justify-content:center;}
+.reply-item.selectable.selected .reply-radio{background:var(--teal-500);border-color:var(--teal-500);}
+.reply-item.selectable.selected .reply-radio::after{content:'';width:7px;height:7px;border-radius:50%;background:white;}
+.reply-tomo-reason{margin-top:5px;font-size:10.5px;color:var(--teal-600);font-weight:600;}
+.reply-ask-inline{margin-top:10px;display:none;}
+.reply-item.selected .reply-ask-inline{display:block;}
+
+/* Suggested reply */
+.suggested{background:var(--teal-50);border:1.5px solid var(--teal-200);border-radius:var(--r-xl);padding:14px 16px;margin-bottom:12px;}
+.suggested.amber-s{background:var(--amber-50);border-color:var(--amber-200);}
+.suggested-label{font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:var(--teal-600);margin-bottom:8px;}
+.suggested.amber-s .suggested-label{color:var(--amber-600);}
+.suggested-text{font-size:13.5px;color:var(--n-800);line-height:1.6;padding:10px 14px;background:var(--n-0);border-radius:var(--r-lg);border:1px solid var(--teal-100);min-height:60px;outline:none;}
+.suggested.amber-s .suggested-text{border-color:var(--amber-100);}
+.suggested-hint{font-size:11px;color:var(--n-500);margin-top:6px;}
+
+/* Angle picker */
+.angle{display:flex;gap:10px;padding:12px 14px;background:var(--n-50);border-radius:var(--r-xl);margin-bottom:7px;cursor:pointer;border:1.5px solid var(--n-200);transition:all 150ms;}
+.angle:hover{border-color:var(--amber-200);background:var(--amber-50);}
+.angle.picked{border-color:var(--amber-500);background:var(--amber-50);}
+.angle-n{width:22px;height:22px;border-radius:50%;background:var(--n-200);color:var(--n-600);font-family:var(--font-en);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;}
+.angle.picked .angle-n{background:var(--amber-500);color:white;}
+.angle-title{font-size:13px;font-weight:600;color:var(--n-800);margin-bottom:2px;}
+.angle-desc{font-size:12px;color:var(--n-600);line-height:1.5;}
+
+/* Chat mock */
+.m-chat-area{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative;}
+
+/* Interview mode banner — full (Chat) */
+.iv-banner{
+  background:linear-gradient(90deg,var(--purple-50),var(--n-100));
+  border-bottom:1px solid var(--purple-100);
+  padding:12px 28px;display:flex;align-items:center;gap:14px;
+  flex-shrink:0;
+}
+
+/* Interview paused banner — compact (Signals page, sticky) */
+.iv-banner-compact{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 20px 9px 16px;
+  background:var(--n-0);
+  border-left:3px solid var(--purple-500);
+  border-bottom:1px solid var(--purple-100);
+  position:sticky;top:0;z-index:10;
+  cursor:pointer;
+  transition:background 150ms;
+}
+.iv-banner-compact:hover{background:var(--purple-50);}
+.iv-bc-icon{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--purple-100);color:var(--purple-600);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.iv-bc-body{flex:1;min-width:0;}
+.iv-bc-title{font-size:12.5px;font-weight:600;color:var(--n-800);line-height:1.3;}
+.iv-bc-sub{font-size:11px;color:var(--n-500);}
+.iv-bc-dots{display:flex;gap:3px;flex-shrink:0;}
+.iv-bc-dot{width:5px;height:5px;border-radius:50%;background:var(--n-300);}
+.iv-bc-dot.done{background:var(--purple-500);}
+.iv-bc-cta{
+  padding:5px 12px;border-radius:var(--r-md);
+  background:var(--purple-500);color:white;
+  font-family:inherit;font-size:11.5px;font-weight:600;
+  border:none;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  transition:background 150ms;
+}
+.iv-bc-cta:hover{background:var(--purple-600);}
+.iv-banner-icon{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--purple-500);color:white;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.iv-banner-body{flex:1;min-width:0;}
+.iv-banner-title{font-size:13px;font-weight:600;color:var(--n-900);margin-bottom:2px;}
+.iv-banner-sub{font-size:11.5px;color:var(--n-500);}
+.iv-progress{
+  display:flex;gap:3px;margin-left:12px;
+}
+.iv-dot{width:6px;height:6px;border-radius:50%;background:var(--n-300);}
+.iv-dot.done{background:var(--purple-500);}
+.iv-dot.current{background:var(--purple-500);box-shadow:0 0 0 3px var(--purple-100);}
+.iv-banner-actions{display:flex;gap:6px;}
+.iv-pill-btn{
+  padding:5px 12px;border-radius:var(--r-md);border:1px solid var(--n-200);
+  background:var(--n-0);font-family:inherit;font-size:11.5px;font-weight:500;
+  color:var(--n-600);cursor:pointer;transition:all 150ms;
+}
+.iv-pill-btn:hover{border-color:var(--n-400);color:var(--n-800);}
+
+/* Interview question block */
+.iv-question{
+  background:var(--n-0);border:1.5px solid var(--purple-100);
+  border-radius:var(--r-xl);padding:14px 16px;margin-top:8px;
+}
+.iv-q-label{
+  font-size:10.5px;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;color:var(--purple-600);margin-bottom:6px;
+}
+.iv-q-text{font-size:14px;color:var(--n-800);line-height:1.55;margin-bottom:12px;}
+.iv-choices{display:flex;flex-direction:column;gap:6px;}
+.iv-choice{
+  padding:10px 14px;border:1px solid var(--n-200);border-radius:var(--r-lg);
+  background:var(--n-50);font-family:inherit;font-size:12.5px;color:var(--n-700);
+  cursor:pointer;transition:all 150ms;text-align:left;line-height:1.5;
+}
+.iv-choice:hover{border-color:var(--purple-300);background:var(--purple-50);color:var(--n-900);}
+.iv-choice.picked{border-color:var(--purple-500);background:var(--purple-50);color:var(--n-900);font-weight:500;}
+.iv-choice-other{
+  padding:10px 14px;border:1px dashed var(--n-300);border-radius:var(--r-lg);
+  font-size:12px;color:var(--n-500);font-style:italic;text-align:left;cursor:pointer;
+}
+.iv-choice-other:hover{border-color:var(--purple-400);color:var(--purple-600);}
+
+/* Interview completion summary */
+.iv-summary{
+  background:linear-gradient(135deg,var(--purple-50),var(--n-0));
+  border:1.5px solid var(--purple-200);border-radius:var(--r-xl);
+  padding:16px 18px;
+}
+.iv-summary-title{
+  font-size:13px;font-weight:600;color:var(--n-900);margin-bottom:8px;
+  display:flex;align-items:center;gap:6px;
+}
+.iv-summary-list{list-style:none;margin:0;padding:0;}
+.iv-summary-list li{
+  font-size:12.5px;color:var(--n-700);line-height:1.6;padding:4px 0;
+  padding-left:18px;position:relative;
+}
+.iv-summary-list li::before{
+  content:'+';position:absolute;left:0;top:4px;
+  color:var(--purple-500);font-weight:700;
+}
+
+/* Scan summary bubble (agent push in Chat) */
+.m-chat-scan{
+  background:var(--n-100);border:1px solid var(--n-200);
+  border-radius:var(--r-lg);padding:10px 12px;margin-top:4px;
+}
+.m-chat-scan-head{
+  display:flex;align-items:center;gap:6px;font-size:11px;
+  font-weight:600;color:var(--n-600);margin-bottom:6px;
+}
+.m-chat-scan-list{list-style:none;margin:0;padding:0;}
+.m-chat-scan-list li{
+  font-size:12px;color:var(--n-700);line-height:1.5;padding:2px 0;
+  padding-left:12px;position:relative;
+}
+.m-chat-scan-list li::before{
+  content:'';width:4px;height:4px;border-radius:50%;
+  background:var(--n-400);position:absolute;left:0;top:9px;
+}
+.m-chat-cta{
+  margin-top:8px;font-size:12px;color:var(--teal-600);
+  font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:4px;
+}
+.m-chat-cta:hover{color:var(--teal-700);text-decoration:underline;}
+
+/* Invitation message (agent proposes interview) */
+.iv-invite{
+  background:linear-gradient(135deg,var(--purple-50),var(--n-0));
+  border:1.5px solid var(--purple-100);border-radius:var(--r-xl);
+  padding:12px 14px;margin-top:4px;
+}
+.iv-invite-title{
+  font-size:12.5px;font-weight:600;color:var(--purple-600);
+  margin-bottom:6px;display:flex;align-items:center;gap:6px;
+}
+.iv-invite-body{font-size:12.5px;color:var(--n-700);line-height:1.55;margin-bottom:10px;}
+.iv-invite-actions{display:flex;gap:6px;}
+.iv-invite-primary{
+  padding:7px 14px;border-radius:var(--r-md);background:var(--purple-500);
+  color:white;border:none;font-family:inherit;font-size:12px;font-weight:600;
+  cursor:pointer;
+}
+.iv-invite-primary:hover{background:var(--purple-600);}
+.iv-invite-secondary{
+  padding:7px 14px;border-radius:var(--r-md);background:none;
+  color:var(--n-500);border:none;font-family:inherit;font-size:12px;font-weight:500;
+  cursor:pointer;
+}
+.iv-invite-secondary:hover{color:var(--n-800);}
+
+/* Interview completion badge on message */
+.iv-complete-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  font-size:10.5px;font-weight:600;color:var(--purple-600);
+  background:var(--purple-50);padding:2px 8px;border-radius:99px;
+  margin-bottom:6px;
+}
+.m-chat-msgs{flex:1;overflow-y:auto;padding:20px 28px;}
+.m-chat-msg{display:flex;gap:10px;margin-bottom:16px;}
+.m-chat-msg.user{flex-direction:row-reverse;}
+.m-chat-bubble{max-width:380px;padding:12px 16px;border-radius:var(--r-xl);font-size:13.5px;line-height:1.6;color:var(--n-800);}
+.m-chat-msg.agent .m-chat-bubble{background:var(--n-100);border:1px solid var(--n-200);}
+.m-chat-msg.user .m-chat-bubble{background:var(--teal-50);border:1px solid var(--teal-200);}
+.m-chat-av{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+.m-chat-msg.agent .m-chat-av{background:var(--teal-500);color:white;}
+.m-chat-msg.user .m-chat-av{background:var(--n-300);color:var(--n-600);}
+.m-chat-input{padding:16px 28px;border-top:1px solid var(--n-200);display:flex;gap:10px;align-items:center;}
+.m-chat-field{flex:1;padding:10px 16px;border:1px solid var(--n-200);border-radius:var(--r-xl);font-family:inherit;font-size:13.5px;color:var(--n-800);background:var(--n-0);outline:none;transition:border-color 150ms;}
+.m-chat-field:focus{border-color:var(--teal-400);}
+.m-chat-send{width:36px;height:36px;border-radius:50%;background:var(--teal-500);color:white;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 150ms;}
+.m-chat-send:hover{background:var(--teal-600);}
+
+/* Nav page switcher inside mock */
+.m-page{display:none;}
+.m-page.active{display:flex;flex-direction:column;flex:1;overflow:hidden;}
+
+@media(max-width:768px){
+  .m-sidebar{display:none;}
+  .cmp-row{grid-template-columns:1fr;}
+  .m-detail{width:100%;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ Top Navigation ═══ -->
+<nav class="top-nav">
+  <div class="top-nav-inner">
+    <span class="top-nav-brand">Cycle 06</span>
+    <button class="top-tab active" onclick="showTab('overview')">Overview</button>
+    <button class="top-tab" onclick="showTab('onboarding')">Onboarding</button>
+    <button class="top-tab" onclick="showTab('engage')">Engage</button>
+    <button class="top-tab" onclick="showTab('create')">Create</button>
+    <button class="top-tab" onclick="showTab('chat')">Chat</button>
+    <button class="top-tab" onclick="showTab('monetization')">Monetization</button>
+    <button class="top-tab" onclick="showTab('mock')">Interactive Mock</button>
+  </div>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB: OVERVIEW
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-overview" class="spec-section active">
+<div class="prose">
+  <div class="prose-label">Cycle 06 — Overview</div>
+  <h1>从 Ghostwriter 到 Signals</h1>
+
+  <p>Cycle 04-05 的核心假设是 <strong>Agent 帮你写帖子、帮你发帖子</strong>。经过两个 cycle 的验证，我们发现这个方向有根本性问题：Agent 不知道用户今天经历了什么，生成的内容永远是围绕 VOICE.md 的变体，缺乏真实性。</p>
+
+  <p>Cycle 06 的方向转变：<strong>Agent 不帮你写，Agent 帮你看。</strong> 从 ghostwriter 变成 signal scout。Agent 持续扫描 X，把值得你注意的信号筛出来，你决定是否行动。</p>
+
+  <div class="divider"></div>
+
+  <h2>命名体系</h2>
+
+  <p>产品里的每个概念需要一个清晰的名字。以下是决策：</p>
+
+  <div class="term-grid">
+    <div class="term-key">页面名称</div>
+    <div class="term-val"><strong>Signals</strong> — 页面展示的就是一串 signal，所以页面名和内容名一致。Sidebar 里显示为 「Signals」 + badge 数字。</div>
+    <div class="term-key">卡片名称</div>
+    <div class="term-val"><strong>Signal</strong>（信号）— Agent 检测到的每一个值得注意的信号就是一张卡片。「你有 5 个新 Signal」比「你有 5 个新 Insight」更有紧迫感。Insight 暗示深度思考，但大部分卡片是时效性的行动提示。</div>
+    <div class="term-key">Signal 类型</div>
+    <div class="term-val">每个 Signal 标记为四种类型之一：<strong>Engage</strong>（对话机会）、<strong>Create</strong>（内容时机）、<strong>Research</strong>（情报摘要）、<strong>Network</strong>（关系动态）。用颜色 badge 区分。</div>
+    <div class="term-key">行动</div>
+    <div class="term-val">每张 Signal 卡片的最终动作都是 <strong>导向 X</strong>：回复、发帖、查看主页、阅读。不在 Tomo 内完成，Tomo 是决策层，X 是执行层。</div>
+    <div class="term-key">扫描</div>
+    <div class="term-val"><strong>Scan</strong> — Agent 每次 heartbeat（~30min）执行一次 scan，扫描你的帖子回复 + 领域趋势 + 提及 + 互动数据。Signals 页顶部显示「12 分钟前扫描」。</div>
+  </div>
+
+  <h3>命名决策记录</h3>
+  <div class="callout">
+    早期方案叫过 <strong>Radar</strong>（扫描器 metaphor），后来决定统一用 <strong>Signals</strong>。原因：软件产品一般用页面显示的内容命名（Inbox → Email 是例外因为 Email 被邮件占用）。我们的 signal 没有命名冲突，所以 <strong>页面和卡片用同一个词，认知负担最低</strong>。
+  </div>
+
+  <h3>为什么不叫别的</h3>
+  <ul>
+    <li><strong>Radar</strong> — 更有记忆点，但多了一层 metaphor 抽象，用户需要学「Radar 里放 Signal」</li>
+    <li><strong>Feed</strong> — 太 generic，和 X 自己的 feed 容易混淆</li>
+    <li><strong>Pulse</strong> — 暗示心跳/健康，但我们检测的是外部信号，不是内部状态</li>
+    <li><strong>Insights</strong> — 暗示深度分析，但 Engage 卡片是时效性的行动提示</li>
+    <li><strong>Opportunities</strong> — 太 sales-y，而且 Research/Network 不是「机会」</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>四层信号模型</h2>
+
+  <div class="cmp-row">
+    <div class="cmp-card teal">
+      <div class="cmp-card-label">Layer 1 — Engage</div>
+      <h4>参与对话</h4>
+      <p>你自己帖子的回复（Inbound）+ 外部值得加入的对话（Outbound）。最高优先级，有时效性。</p>
+    </div>
+    <div class="cmp-card amber">
+      <div class="cmp-card-label">Layer 2 — Create</div>
+      <h4>内容时机</h4>
+      <p>趋势 × 你的角度 × idea backlog 的交叉匹配。告诉你「现在发什么效果最好」。</p>
+    </div>
+  </div>
+  <div class="cmp-row">
+    <div class="cmp-card blue" style="opacity:0.55;">
+      <div class="cmp-card-label">Layer 3 — Research <span style="background:var(--n-200);color:var(--n-700);font-size:9.5px;padding:1px 6px;border-radius:4px;margin-left:6px;letter-spacing:0.04em;">CYCLE 6 暂缓</span></div>
+      <h4>持续情报</h4>
+      <p>用户设定关注主题，Agent 持续监控，定期输出 briefing。Dataminr 面向个人用户的版本。</p>
+    </div>
+    <div class="cmp-card" style="background:var(--purple-50);border-color:var(--purple-100);">
+      <div class="cmp-card-label" style="color:var(--purple-600);">Layer 4 — Network</div>
+      <h4>关系信号</h4>
+      <p>谁在持续关注你？谁最近互动减少了？从互动数据里提取关系动态。</p>
+    </div>
+  </div>
+
+  <div class="callout amber">
+    <strong>Cycle 6 范围（4/20 sync）：</strong> Cycle 6 聚焦 <strong>Engage（Inbound + Outbound）</strong> 和 <strong>Create</strong> 两层。<strong>Research 暂缓</strong>，不进本 cycle 交付范围（UI 占位可保留灰化状态，后端不实现）。Network 作为低频信号仍在范围内。
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>导航结构变化</h2>
+
+  <table class="spec-table">
+    <tr><th>旧（Cycle 05）</th><th>新（Cycle 06）</th><th>说明</th></tr>
+    <tr><td>Chat（主 tab）</td><td>Signals（主 tab）</td><td>Signal feed 成为用户打开 app 的第一个页面</td></tr>
+    <tr><td>Tasks（看板）</td><td><strong>删除</strong></td><td>三栏看板不再适用。Signal 卡片取代 task 概念</td></tr>
+    <tr><td>Log（执行日志）</td><td>合并到 Signals</td><td>Scan summary + per-card research trail 替代独立 Log 页</td></tr>
+    <tr><td>Chat</td><td>Chat（降级）</td><td>从主 tab 变为辅助入口，用于给 Agent 上下文</td></tr>
+    <tr><td>Stats</td><td>Stats（保留）</td><td>帖子表现数据，对 Create 有反馈价值</td></tr>
+    <tr><td>Settings</td><td>Settings（保留）</td><td>管理 VOICE.md topics、通知偏好、Research 主题</td></tr>
+  </table>
+
+  <h2>Badge Taxonomy（Signal 卡片标签规范）</h2>
+
+  <p>Signal 卡片上的每一个标签都要遵守固定规范。全部英文、固定 slot、颜色语义明确。实现时以这一节为准。</p>
+
+  <h3>Slot 1 — Type Badge（必有，1 个，弱化的彩色 dot + 全大写小字）</h3>
+  <p>每张 Signal 卡片<strong>必须有且只有一个</strong> Type Badge。<strong>视觉上是弱化的元数据</strong>：一个小色点 + 全大写小字（如 <code>● ENGAGE</code>），不是填充 pill。Badge 的存在是给系统做 filter 分类，不是给用户读内容。颜色 = Signal 类型，只用一级名称（Engage / Create / Research / Network），<strong>不再附加 · 子类型</strong>。子类型的差异由 section header 和 why-box 承担。</p>
+  <table class="spec-table">
+    <tr><th>Badge 文案</th><th>视觉</th><th>含义</th><th>子类型差异由谁承担</th></tr>
+    <tr><td><code>Engage</code> (teal dot)</td><td>● ENGAGE</td><td>需要回应的对话机会（Inbound 自己帖子 + Outbound 外部）</td><td>Section header：<code>INBOX · WORTH REPLYING</code> vs <code>DISCOVER · WORTH JOINING</code>；teal vs peach 色点保留视觉差异</td></tr>
+    <tr><td><code>Create</code> (amber dot)</td><td>● CREATE</td><td>发帖时机</td><td>Section header：<code>CREATE · BEST TO POST TODAY</code>；why-box 解释触发源（trend / idea / chat seed）</td></tr>
+    <tr><td><code>Research</code> (blue dot)</td><td>● RESEARCH</td><td>周期性情报摘要</td><td>Section header + why-box</td></tr>
+    <tr><td><code>Network</code> (purple dot)</td><td>● NETWORK</td><td>关系动态</td><td>Section header + why-box</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>为什么把 badge 弱化：</strong>之前的填充 pill（<code>Engage · Inbox</code>）会和卡片标题争视觉位。但用户读卡片靠的是「标题 + 内容 + why-box」这套人话叙事，不是系统分类词。Badge 是给 filter tab 做锚点的，所以视觉上应该退到二线。<br><br>
+    <strong>为什么去掉子类型：</strong>「Inbox / Discover / Trend / Idea / Activity」对从没用过 Tomo 的人没有意义，需要先学系统词汇才能读懂。这些子类型的真正用途是后端分类（不同的 dedup_key、不同的 scan 频率），不是前端展示。前端只需要让用户知道「这是个对话机会 / 这是个发帖时机」，section header 已经够用。
+  </div>
+
+  <h4>CSS class 命名（保留）</h4>
+  <p>虽然 badge 文案不再带子类型，但 CSS class 仍按子类型命名，因为不同子类型可能有不同的色调微差异（如 Engage A teal vs Engage B peach）：</p>
+  <table class="spec-table">
+    <tr><th>Class</th><th>对应子类型（后端 type）</th><th>色点</th></tr>
+    <tr><td><code>.b-type-ea</code></td><td>Engage Inbound（自己帖子的回复）</td><td>teal</td></tr>
+    <tr><td><code>.b-type-eb</code></td><td>Engage Outbound（外部对话）</td><td>peach</td></tr>
+    <tr><td><code>.b-type-c-trend</code> / <code>.b-type-c-idea</code> / <code>.b-type-c-activity</code></td><td>Create 三子类型</td><td>amber（共用）</td></tr>
+    <tr><td><code>.b-type-research</code></td><td>Research</td><td>blue</td></tr>
+    <tr><td><code>.b-type-network</code></td><td>Network</td><td>purple</td></tr>
+  </table>
+
+  <h3>Slot 2 — Trigger Chip（0-2 个，中性灰）</h3>
+  <p>在卡片扫一眼时立刻传达「为什么现在、为什么是你」的关键事实。<strong>原则：只保留不需要解释就能读懂的 chip。</strong> 凡是需要了解系统内部才能读懂的标签（数据来源、内部流转路径），一律移入 why-box 用完整句子说明，不出现在 chip 上。</p>
+
+  <table class="spec-table">
+    <tr><th>Chip</th><th>出现场景</th><th>替换/移除说明</th></tr>
+    <tr><td><code>you were mentioned</code></td><td>你被 @ 点名</td><td>原 <code>@mentioned</code> → 改为完整短语，立即可读</td></tr>
+    <tr><td><code>quoted by @handle</code></td><td>你的帖子被某人引用</td><td>原 <code>quoted</code> → 带出具体用户名，更有意义</td></tr>
+    <tr><td><code>N new replies</code></td><td>Engage · Inbox 累计新回复数（示例：<code>3 new replies</code>）</td><td>保留，已是用户语言</td></tr>
+    <tr><td><code>trending fast</code></td><td>话题热度在快速上升</td><td>原 <code>velocity +N%</code> → 百分比是系统指标，用户不关心具体数字，关心「这个话题正在爆」</td></tr>
+    <tr><td><code>~Nh window</code></td><td>Create Signal 的时机窗口倒计时（示例：<code>~6h window</code>）</td><td>保留，时效感清晰</td></tr>
+  </table>
+
+  <div class="callout amber">
+    <strong>移除的 chip（原因）：</strong>
+    <ul style="margin-top:8px;margin-bottom:0;">
+      <li><code>high-value reply</code> — 「高价值」是系统的判断，用户不明白标准。why-box 里直接说「发了一条实质性反驳」更清楚</li>
+      <li><code>follower</code> — 单独一个词没有意义。who-box 里写「你的 follower @xxx」更有价值</li>
+      <li><code>from engage</code> / <code>from ideas.md</code> / <code>from chat</code> — 内部数据来源路径，用户不需要知道。why-box 负责解释触发原因</li>
+      <li><code>new contact</code> — 意义模糊。why-box 里写「你们从未互动过」更直接</li>
+    </ul>
+  </div>
+
+  <h3>Slot 3 — Time / Urgency（必有，右对齐）</h3>
+  <p>不是 badge 形式，是独立的位置。示例：</p>
+  <ul>
+    <li><code>2h ago</code> — 基础时间戳</li>
+    <li><code>~6h window</code> — 时效窗口倒计时（peach 色，强提示）</li>
+    <li><code>weekly</code> — Research 周期</li>
+    <li><code>acted</code> — 已行动状态</li>
+  </ul>
+
+  <div class="callout">
+    <strong>实现规则：</strong>
+    <ul style="margin-top:8px;margin-bottom:0;">
+      <li>每张 Signal 严格遵循 Slot 1 + Slot 2（可选）+ Slot 3 三槽结构</li>
+      <li>Slot 1 Type Badge：色点 + 全大写小字（`● ENGAGE` / `● CREATE` / `● RESEARCH` / `● NETWORK`）。<strong>视觉上是元数据，不是主内容</strong>。不再带 · 子类型</li>
+      <li>Slot 2 Trigger Chip：常规 pill 样式，全英文 lowercase，文案为人话短语（参见上节）</li>
+      <li>不引入 Slot 1 / Slot 2 / Slot 3 之外的第 4 类标签</li>
+      <li>Create 三子类型在 CSS class 上保留区分（trend / idea / activity），但 badge 文案统一为 <code>Create</code>，色点统一为 amber</li>
+      <li>Trigger Chip 数量 &le; 2，超过则只保留最强的两个</li>
+      <li>Chip 文案必须通过「路人测试」：一个从没用过 Tomo 的人看到这个词，能不能立刻知道它在说什么？不能 → 不上 chip，进 why-box</li>
+      <li>Chip 不能重复标题已经说过的事（如标题已写「@lennysan 引用了你」，就不再上 <code>quoted by @lennysan</code> chip）</li>
+    </ul>
+  </div>
+
+  <h2>Signal 背后的生产线（Brief 内部机制）</h2>
+  <p>Signal 是用户看到的<strong>卡片</strong>。Signal 之所以能浮出来，是因为 Agent 内部把每一个机会都包成一张 <strong>Brief</strong>（Create Brief / Engage Brief）在走生产线。下图是 4/20 sync 对齐的内部流水：</p>
+
+  <div class="callout">
+    <strong>Brief 生产线（Agent 内部，不暴露用户 UI）：</strong><br>
+    <code>Capture</code>（抓原始素材）→ <code>Context</code>（拼上下文）→ <code>Angle</code>（选写作/回复角度）→ <code>Decision</code>（判断是否浮出）→ <code>Output</code>（生成 Signal 卡片）<br><br>
+    <strong>对用户：只有 Output 阶段的 Signal 卡片可见。</strong> Capture / Context / Angle / Decision 是 Agent 内部状态，不在 Cycle 6 UI 中暴露。
+  </div>
+
+  <h3>Tracing — 中间产物可追踪</h3>
+  <div class="callout blue">
+    Brief 的每个阶段都<strong>结构化落地</strong>（不是临时内存状态）。同一次 Capture 的结果可被多张 Signal 共享（例如一次趋势扫描同时驱动一张 Create Signal 和多张 Engage Outbound Signal）。这套 tracing 是 Feedback 机制的前提。
+  </div>
+
+  <h3>Feedback — Agent 自我优化</h3>
+  <div class="callout blue">
+    Yajun 扩展现有 Review 机制到 Brief 层：<strong>每天 AI 咀嚼一次所有 Brief 的中间产物</strong>（哪些 Capture 被采用、哪些 Angle 被跳过、哪些 Signal 被用户 acted），产出对下一轮 Capture 方向的优化提示。用户不可见，但决定 Signal 质量的进化速度。
+  </div>
+
+  <h2>Autopilot / Copilot</h2>
+  <div class="callout">
+    <strong>删除 Autopilot/Copilot 切换。</strong> 在 Signals 模型下，Agent 的输出是 Signal 卡片（信息），不是可执行的动作。所有对外行动（发帖、回复、DM）都需要用户确认。Agent 后台持续扫描不需要用户控制——这不是「Autopilot」，这就是产品的默认工作方式。
+  </div>
+
+  <h2>Anti-Spam 原则（Product Constraints）</h2>
+
+  <p>反 AI mass reply 的叙事在 2026 年正在变强。用户在 X 上看到明显 AI 生成的批量回复会感到被冒犯 —— 这种内容不但没有增长效果，反而会损害个人品牌。Cycle 06 Tomo 的立场必须明确：<strong>Tomo 不是 mass reply 工具，是 curated opportunity scout。</strong> 以下约束必须在实现时硬编码：</p>
+
+  <h3>数量上限（每用户每天）</h3>
+  <table class="spec-table">
+    <tr><th>Signal 类型</th><th>每日上限</th><th>说明</th></tr>
+    <tr><td>Engage Inbound（自己帖子的回复）</td><td>≤ 5 条</td><td>只筛出真正值得回的。互动少的回复不进 Signal</td></tr>
+    <tr><td>Engage Outbound（外部对话）</td><td>≤ 3 条</td><td>宁可给 0 条，也不凑数</td></tr>
+    <tr><td>Create（所有类型）</td><td>≤ 2 条</td><td>发帖机会本来就不应该多</td></tr>
+    <tr><td>Research（周报）</td><td>按主题，每主题每周 1 条</td><td>不是日高频信号</td></tr>
+    <tr><td>Network</td><td>≤ 2 条/周</td><td>关系动态本来就慢</td></tr>
+    <tr><td><strong>每日总 Signal 上限</strong></td><td><strong>≤ 10 条</strong></td><td>超过 10 条，用户就麻木了</td></tr>
+  </table>
+
+  <h3>Bespoke Reply 原则</h3>
+  <div class="callout amber">
+    <strong>每条建议回复必须是针对那条具体对话生成的，不能是模板。</strong> 实现上 prompt 必须包含：原帖全文 + 回复上下文 + 用户独特角度（来自 VOICE.md）。如果 agent 生成的回复能换到另一条帖子下也通顺，说明回复质量不合格 —— 应该拒绝输出。
+  </div>
+
+  <h3>Tag 数量硬约束</h3>
+  <ul>
+    <li>单条建议帖子/回复内 tag ≤ <strong>3 个</strong>账号</li>
+    <li>连续 3 条帖子不能出现相同的 tag 组合（避免刷屏）</li>
+    <li>Tag 必须有明确理由（原作者 / 产品官方 / founder / DevRel），不能为了曝光乱 tag</li>
+  </ul>
+
+  <h3>Signal 质量底线（Reject 条件）</h3>
+  <p>以下情况 Agent 应该 <strong>主动不生成 Signal</strong>，而不是凑数：</p>
+  <ul>
+    <li>Engage：原帖下已有 &gt; 100 条回复，且没有独特切入点 → 不推荐用户去挤</li>
+    <li>Engage：找不到用户 voice 里对应的独特视角 → 不生成 Signal 而不是生成平庸回复</li>
+    <li>Create：趋势扫描找到的话题和用户 VOICE.md 只是字面匹配，没有实质角度 → 不生成</li>
+    <li>Create C1/C2/C3：Chat seed 太模糊（如「今天看了一些 AI 新闻」）→ 在 Chat 里反问具体是什么，而不是硬生成</li>
+  </ul>
+
+  <h3>品牌立场（可对外传播）</h3>
+  <div class="callout">
+    <strong>Tomo 的产品承诺（建议写进 landing page + Settings 页）：</strong>
+    <ul style="margin-top:8px;margin-bottom:0;">
+      <li>✗ 不代你自动发帖</li>
+      <li>✗ 不代你自动回复</li>
+      <li>✗ 不做 mass reply，每条建议都是针对那条对话的</li>
+      <li>✓ 每天最多 10 个 Signal，宁缺毋滥</li>
+      <li>✓ 你始终是发送按钮的那个人</li>
+    </ul>
+  </div>
+
+  <h2>通知策略</h2>
+  <table class="spec-table">
+    <tr><th>信号类型</th><th>Push 通知</th><th>邮件 Fallback</th></tr>
+    <tr><td>Engage（时效性）</td><td>立即推送</td><td>24h 未打开 → 汇总邮件</td></tr>
+    <tr><td>Create（趋势窗口）</td><td>推送</td><td>不发邮件</td></tr>
+    <tr><td>Research（周报）</td><td>不推送</td><td>可选周报邮件</td></tr>
+    <tr><td>Network（关系动态）</td><td>不推送</td><td>不发邮件</td></tr>
+  </table>
+  <p>核心逻辑：<strong>通知 = Signal 的推送版。</strong> 高时效 → push，低时效 → app 内静默。一天 1-3 条推送，不多。</p>
+
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB: ONBOARDING
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-onboarding" class="spec-section">
+<div class="prose">
+  <div class="prose-label">Onboarding — 冷启动</div>
+  <h1>Day 0 要让 Signals 能用</h1>
+
+  <p>Cycle 06 产品的所有价值都压在 Signals 上。但 Signals 的质量完全取决于 Agent 对用户的理解是否到位 —— 如果 VOICE.md 是空的，Agent 不知道你的角度，生成的 Signal 就是通用推荐，和不用 Tomo 没区别。</p>
+
+  <p><strong>Onboarding 的任务不是定义用户是谁，而是建立一个「足够让 Signals 能工作」的薄初始理解。</strong> Day 0 之后，Agent 通过 Chat seeds、用户 action 反馈、X history 持续校准，理解越来越准。</p>
+
+  <div class="callout amber">
+    <strong>硬约束（4/20 sync 对齐）：Onboarding 状态下不生成 Signal。</strong><br>
+    用户只有在 Onboarding 走完 Step 4（VOICE.md 保存）之后，Agent 才启动第一次 Signal scan。Onboarding 进行中：Agent 可以后台扫 X history（Step 2 auto-infer），但<strong>不产出任何 Signal 卡片、不写入 Signals feed、不触发通知</strong>。避免未对齐 voice 产出的 Signal 污染用户首屏信任。
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>从 Cycle 05 继承的核心原则（仍然成立）</h2>
+  <p>之前 Cycle 04-05 Onboarding PRD 里定下的几条原则，在 Cycle 06 依然是正确方向，不需要推翻：</p>
+
+  <div class="callout">
+    <strong>1. 先读，再问</strong> — 如果用户 X 上有历史帖子，Agent 必须先 scan + 分析，再问带证据的判断题，不要默认开放长答。<br><br>
+    <strong>2. 选择优先，表达补充</strong> — 默认 2-3 个选项的判断题，必要时一条轻量自定义。不要默认开放问答。<br><br>
+    <strong>3. 学习偏好，不急着定义身份</strong> — 学偏好（写什么方向、用什么方式、目标是什么），不要急着归纳「你是谁」。<br><br>
+    <strong>4. 用户选择高于历史内容</strong> — 历史是证据不是宿命。用户要转方向，系统必须服从。<br><br>
+    <strong>5. 初始模型要薄，但必须可工作</strong> — Day 0 VOICE.md 可以很薄，但不能空到 Signal 明显跑偏。<br><br>
+    <strong>6. 深度理解在合作中长出来</strong> — 真正的 voice model 不应该在 Onboarding 里一次建完，应该通过 heartbeat + Chat seeds + action 反馈持续校准。
+  </div>
+
+  <h2>在 Cycle 06 下需要调整的地方</h2>
+
+  <table class="spec-table">
+    <tr><th>Cycle 05 原定义</th><th>Cycle 06 调整</th><th>原因</th></tr>
+    <tr><td>Day 0 输出「能写出第一批不明显失真的内容」</td><td>Day 0 输出「能生成第一批打中用户的 Signal」</td><td>Agent 不再自主写内容。衡量标准从「draft 质量」变成「Signal 相关性」</td></tr>
+    <tr><td>First draft 作为 Day 0 验证标志</td><td>First Signal 作为 Day 0 验证标志</td><td>First Signal 应该在 Onboarding 完成 1 小时内出现</td></tr>
+    <tr><td>Heartbeat 承担主 learning loop</td><td>Heartbeat 产生 Signal + 用户 action 反馈进 VOICE.md</td><td>Cycle 06 的 learning loop 更闭合：Signal 被采纳/跳过/编辑 = 反馈信号</td></tr>
+    <tr><td>Interview 作为可选深挖</td><td>Interview 仍是可选，且<strong>不进 Chat</strong>，独立全屏流程</td><td>Chat 在 Cycle 06 是 seed 入口，不应被 15 分钟结构化访谈占用</td></tr>
+    <tr><td>Onboarding 的 4 个问题</td><td>保留 4 个 + 加 1 个 Research 主题</td><td>Cycle 06 新增 Research 层，需要用户明确关注主题</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <h2>Onboarding 流程（Cycle 06 版）</h2>
+
+  <h3>Step 1 — Sign Up + Connect X</h3>
+  <p>邮箱注册 → OAuth 连接 X 账号。连接后 Agent 立刻后台开始拉取用户最近 50-100 条 post（如果有）。</p>
+  <ul>
+    <li>预计时间：~1 分钟</li>
+    <li>产出：OAuth token、user profile、X history 原始数据</li>
+    <li>阻塞性：<strong>硬阻塞</strong>（没连 X，Tomo 什么都做不了）</li>
+  </ul>
+
+  <h3>Step 2 — X History Auto-Infer（先读）</h3>
+  <p>Agent 在后台分析用户的 X 历史，产出初步判断，不打扰用户。同时用户看到一个 loading 页面说「正在学习你的风格，约 30 秒」。</p>
+  <p>自动推断的字段：</p>
+  <ul>
+    <li>Topics — 高频出现的 3-5 个话题方向</li>
+    <li>Voice profile — 句式倾向（长/短句）、语气（aggressive/measured/warm）、词汇偏好</li>
+    <li>Anti-patterns — 用户从不用的词、不写的话题</li>
+    <li>Audience — 从互动对象反推</li>
+  </ul>
+  <div class="callout">
+    如果用户 X 历史 &lt; 10 条，跳过 auto-infer，直接进 Step 3 用默认问题兜底。
+  </div>
+
+  <h3>Step 3 — Guided Confirmation（选择式访谈）</h3>
+  <p>不是开放问答，是<strong>判断题 + 极少量补充</strong>。时间控制在 5-8 分钟。默认 5-6 题。</p>
+
+  <table class="spec-table">
+    <tr><th>问题</th><th>形式</th><th>产出字段</th></tr>
+    <tr><td>「我看到你过去更常写这三类内容，接下来先聚焦哪两个？」（附 3 个 auto-infer 的 topic 选项）</td><td>多选 2/3</td><td>VOICE.md &middot; Topics</td></tr>
+    <tr><td>「我读下来你的表达更偏向 A / B，你想继续哪边？」（A=contrarian short-take，B=storyteller + 数据）</td><td>单选</td><td>VOICE.md &middot; Voice profile</td></tr>
+    <tr><td>「你做社媒最想达成的是 A / B / C？」（A=建立影响力，B=找同类人合作，C=给产品/公司带流量）</td><td>单选</td><td>VOICE.md &middot; Audience &middot; Goal</td></tr>
+    <tr><td>「Tomo 应该主要帮你做哪两件？」（Engage inbox / Engage discover / Create trend / Create activity / Research briefing）</td><td>多选 2/5</td><td>Signals 类型优先级</td></tr>
+    <tr><td>「有哪些话题你希望 Agent 持续追踪？」（文本输入，可留空）</td><td>自由输入</td><td>Research topics 初始列表</td></tr>
+    <tr><td>「有什么你绝对不会写的话题或方式？」（可选）</td><td>自由输入</td><td>VOICE.md &middot; Anti-patterns</td></tr>
+  </table>
+
+  <h4>Step 3 的交互形式：Chat Interview Mode</h4>
+
+  <div class="callout">
+    <strong>实现方式：直接复用 Chat + Interview Mode，不做额外组件。</strong><br>
+    Onboarding 就是 Interview Mode 的第一次使用场景。新用户完成 Connect X 后，进入 Chat 页面，Agent 以 Interview Mode 启动 Onboarding 问答。完整交互模式见 Interactive Mock tab → Chat 页 → Interview Mode 段落。
+  </div>
+
+  <h4>视觉结构（复用现有 Chat Interview Mode）</h4>
+  <pre style="background:var(--n-100);border-radius:var(--r-lg);padding:16px 18px;font-size:12px;line-height:1.7;color:var(--n-700);overflow-x:auto;">┌─────────────────────────────────────────────────────┐
+│ Chat                              agent 对话主场      │  ← Chat 页 header
+├─────────────────────────────────────────────────────┤
+│ 🎙 Onboarding · Question 2 of 6  ●●○○○○  [Skip][Exit]│  ← iv-banner（进度条）
+├─────────────────────────────────────────────────────┤
+│                                                      │
+│  [T] 我读了你的 X 历史，先确认几个方向。             │  ← Agent canvas 卡片
+│      ┌─────────────────────────────────────────┐    │     在 Chat 气泡流里渲染
+│      │ Question 2 of 6                          │    │
+│      │ 你的表达更偏向哪种？                      │    │
+│      │ ○ Contrarian short-take                  │    │
+│      │ ● Storyteller + 数据           [下一题 →]│    │
+│      └─────────────────────────────────────────┘    │
+│                                                      │
+└─────────────────────────────────────────────────────┘</pre>
+
+  <table class="spec-table">
+    <tr><th>元素</th><th>实现方式</th></tr>
+    <tr><td>进度条 banner</td><td>现有 <code>iv-banner</code> 组件，改 title 为「Onboarding」，进度点 = 题目数</td></tr>
+    <tr><td>问题卡片</td><td>Agent 输出 canvas（<code>surface: "onboarding_q*"</code>），前端在 Chat 气泡流里渲染，样式复用现有 <code>iv-question</code></td></tr>
+    <tr><td>用户回答</td><td>点击 canvas 选项后通过 <code>canvas-submit</code> 发给 para-service → Agent 收到后推送下一题</td></tr>
+    <tr><td>Skip / Exit</td><td>Banner 右侧按钮，点击触发 Quick 路径（3 道核心题）或直接结束</td></tr>
+    <tr><td>路由 / URL</td><td>始终在 <code>/chat</code>，无跳转，无独立路由</td></tr>
+    <tr><td>完成后</td><td>Agent 输出 VOICE.md preview canvas → 用户确认 → 自动导航到 Signals 页</td></tr>
+  </table>
+
+  <div class="callout amber">
+    <strong>Onboarding vs Interview 的区别：</strong>两者都用 Chat Interview Mode，但 Onboarding 是新用户 Day 0 的首次强引导（Agent 主动发起，不可绕过第 1 题），Interview 是后续可选深挖（Settings 或 Agent 检测到 voice drift 后邀请）。UI pattern 完全一致，区别只在触发时机和 canvas surface 命名。
+  </div>
+
+  <h3>Step 4 — VOICE.md Preview + Edit</h3>
+  <p>Agent 把 Step 2 和 Step 3 的结果合并，生成 VOICE.md 初稿。用户看到一个 <strong>可编辑的 preview 页面</strong>。</p>
+  <ul>
+    <li>所有字段可直接修改</li>
+    <li>用户点「看起来不错」→ 保存 VOICE.md + 进 Step 5</li>
+    <li>用户点「我想重新来一次」→ 回到 Step 3</li>
+  </ul>
+
+  <h3>Step 5 — First Scan + First Signal</h3>
+  <p>VOICE.md 一保存，Agent 立刻触发一次 scan。</p>
+  <ul>
+    <li>扫描用户最近 10 条帖子的回复（Engage Inbox）</li>
+    <li>扫描 VOICE.md topics 对应的当前趋势（Create Trend）</li>
+    <li>如果有 Research topics，后台开始第一轮采集（但不承诺 Day 0 出 briefing）</li>
+  </ul>
+  <p><strong>SLA：first Signal 应在 VOICE.md 保存后 1 小时内出现。</strong> 如果扫描后没有符合质量标准的 Signal（Anti-Spam 原则），页面展示 empty state：「Agent 在等待合适的时机。通常会在几小时内出现第一个 Signal。」而不是凑数。</p>
+
+  <div class="divider"></div>
+
+  <h2>Skip / 降级路径</h2>
+
+  <p>如果用户不想完成完整 Step 3，提供降级选项：</p>
+
+  <div class="cmp-row">
+    <div class="cmp-card teal">
+      <div class="cmp-card-label">Full (推荐)</div>
+      <h4>~8 分钟，6 道判断题 + X history auto-infer</h4>
+      <p>VOICE.md 丰满，Signals 质量高，Agent 较少 clarifying question</p>
+    </div>
+    <div class="cmp-card amber">
+      <div class="cmp-card-label">Quick</div>
+      <h4>~2 分钟，3 道核心题 + X history auto-infer</h4>
+      <p>只保留 Topics / Goal / Signals 优先级。其他字段等 Chat 累积</p>
+    </div>
+  </div>
+
+  <p><strong>降级路径的副作用：</strong></p>
+  <ul>
+    <li>Signals 质量在前 1-2 周较低，Agent 会在 Chat 里更频繁反问（clarifying question）</li>
+    <li>用户随时可以在 Settings 里重新触发 Full Onboarding</li>
+    <li>30 天后如果 VOICE.md 仍然很薄，Agent 会通过 Chat 主动建议「Refresh Voice」</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>Pause / Exit / Cancel — Corner Cases</h2>
+
+  <p>Interview 分两类，行为不同：<strong>Onboarding Interview</strong>（Day 0 强引导）和 <strong>Interview</strong>（后续可选深挖）。两类共享 singleton 原则——同一时间只有一个 active session，pause 后唯一入口是 Continue。</p>
+
+  <h3>Onboarding Interview</h3>
+  <div class="callout amber">
+    <strong>核心原则：</strong>任何退出方式都不能让用户进入「什么都没有」的状态。哪怕 0 题都没答，系统也必须用 X history auto-infer 拼出一个最低可运行版本的 VOICE.md，让 Signals 能启动。不可 block 用户进入主 app。
+  </div>
+
+  <table class="spec-table">
+    <tr><th>场景</th><th>处理方式</th><th>VOICE.md 状态</th><th>UI 反馈</th></tr>
+    <tr>
+      <td><strong>Pause → 之后回来</strong></td>
+      <td>session 保留，进度保存</td>
+      <td>未写入（等完成）</td>
+      <td>Signals 页 + Chat 页均显示 <code>iv-banner-compact</code>（「Onboarding paused · Q2 of 6」）。Signals banner 副标题改为「完成后才能看到更精准的 Signal」</td>
+    </tr>
+    <tr>
+      <td><strong>主动 Exit（中途放弃）</strong></td>
+      <td>不弹确认。用已答题目 + X history auto-infer 生成最薄版 VOICE.md 写入。session 清除</td>
+      <td>写入（薄版）</td>
+      <td>toast：「已用现有信息开始扫描，可在 Settings 里随时完善」。banner 消失。导航到 Signals 页</td>
+    </tr>
+    <tr>
+      <td><strong>Skip → Quick（只做 3 道核心题）</strong></td>
+      <td>按顺序只问 Topics / Goal / Signals 优先级，完成后走正常 Step 4-5</td>
+      <td>写入（精简版）</td>
+      <td>Quick 路径完成后正常进入 Step 4 VOICE.md Preview</td>
+    </tr>
+    <tr>
+      <td><strong>Q1 前退出（0 题完成）</strong></td>
+      <td>纯靠 X history auto-infer。如果 X history &lt; 10 条，VOICE.md 为空壳（仅默认值）</td>
+      <td>写入（最薄版 / 空壳）</td>
+      <td>Signals feed 显示 empty state + 引导卡（非 banner）：「设置还不完整，Tomo 找 Signal 的能力会受限。<a>完善设置 →</a>」</td>
+    </tr>
+    <tr>
+      <td><strong>Step 4（VOICE.md Preview）直接关闭</strong></td>
+      <td>用 Agent 生成的初稿直接保存，不要求用户必须编辑</td>
+      <td>写入（Agent 初稿）</td>
+      <td>继续 Step 5，正常触发 First Scan</td>
+    </tr>
+    <tr>
+      <td><strong>X history &lt; 10 条</strong></td>
+      <td>跳过 Step 2 auto-infer，直接进 Interview。题目去掉「我看到你过去写过…」前缀，改为开放题（「你最常写哪类内容？」）</td>
+      <td>依赖用户回答</td>
+      <td>Chat 里 Agent 先说明：「你目前 X 历史较少，我先问几个问题来了解你。」</td>
+    </tr>
+    <tr>
+      <td><strong>Pause 期间用户从 Settings 点「Start Onboarding」</strong></td>
+      <td>按钮此时显示「Continue Onboarding（Q3 of 6）」，不可重新发起</td>
+      <td>—</td>
+      <td>点击跳转到 Chat，恢复 Interview mode</td>
+    </tr>
+  </table>
+
+  <h3>Interview（常规，非 Onboarding）</h3>
+
+  <table class="spec-table">
+    <tr><th>场景</th><th>处理方式</th><th>VOICE.md 状态</th><th>UI 反馈</th></tr>
+    <tr>
+      <td><strong>Pause → 之后回来</strong></td>
+      <td>session 保留，进度保存</td>
+      <td>未写入</td>
+      <td><strong>仅 Chat 页</strong>显示 iv-banner 折叠态（「Interview paused · Q3 of 6」）。Signals 页不显示 banner（Interview 是可选，不影响 Signals 运行）</td>
+    </tr>
+    <tr>
+      <td><strong>主动 Exit（完全取消）</strong></td>
+      <td>弹确认：「已完成的部分（Q1–Q2）要更新到 VOICE.md 吗？」→ 用户选「存」或「丢弃」</td>
+      <td>用户决定</td>
+      <td>session 清除，banner 消失，Settings 按钮恢复「Start Interview」</td>
+    </tr>
+    <tr>
+      <td><strong>Pause 期间从 Settings 点 Interview</strong></td>
+      <td>按钮显示「Continue Interview（Q3 of 6）」，不可发起新 session</td>
+      <td>—</td>
+      <td>点击跳转 Chat，恢复 Interview mode</td>
+    </tr>
+    <tr>
+      <td><strong>Agent 在 Pause 期间再次发送 Interview 邀请</strong></td>
+      <td>Agent 检测到有 active session → 不发新邀请</td>
+      <td>—</td>
+      <td>无新 invite 卡片出现</td>
+    </tr>
+    <tr>
+      <td><strong>Interview 完成</strong></td>
+      <td>更新 VOICE.md + 在 Signals 页产出一批对应话题的 Create Signal</td>
+      <td>更新</td>
+      <td>Chat 里 Agent 发 completion summary，Signals 页出现新 Create Signal 卡片</td>
+    </tr>
+  </table>
+
+  <div class="callout">
+    <strong>Singleton 规则：</strong>Onboarding Interview 和常规 Interview 共用同一个 session slot，同一时间只能有一个 active interview（无论类型）。Onboarding 未完成时，Settings 里的 Interview 按钮禁用，提示「请先完成 Onboarding 设置」。
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Interview 的新定位（可选深挖）</h2>
+
+  <p>Cycle 04-05 Interview 文档里定义了 Interview 作为「需要更深上下文时的 5-10 分钟深谈」。这个定位在 Cycle 06 <strong>保留</strong>，但位置变了：</p>
+
+  <table class="spec-table">
+    <tr><th>维度</th><th>Cycle 04-05</th><th>Cycle 06</th></tr>
+    <tr><td>入口</td><td>Task Board 第一列出现卡片</td><td>Settings 里 &laquo;Interview&raquo; 按钮 + Signal 里 Agent 主动建议</td></tr>
+    <tr><td>UI</td><td>全屏 overlay</td><td>仍全屏 overlay</td></tr>
+    <tr><td>触发方式</td><td>Agent 判断某话题值得深挖</td><td>用户主动 + Agent 基于 Chat seeds 建议</td></tr>
+    <tr><td>与 Onboarding 关系</td><td>可能在 Onboarding 阶段出现</td><td><strong>默认不在 Onboarding</strong>。Onboarding 走 Guided Confirmation。Interview 是后续可选深挖</td></tr>
+    <tr><td>产出</td><td>更新 VOICE.md / memory</td><td>更新 VOICE.md / memory + 可能直接产出一批 Create Signals</td></tr>
+  </table>
+
+  <h3>什么场景触发 Interview</h3>
+  <ul>
+    <li>用户在 Chat 里多次提到同一个话题，但 VOICE.md 里没有对应深度（例：连续 3 周在聊 distribution 但 Topics 里只有「AI」）</li>
+    <li>Create 生成的角度建议用户反复拒绝，说明对这个话题的理解有偏差</li>
+    <li>用户主动点击 Settings &middot; Interview，指定一个主题（「我想 Tomo 更懂我对 agent reliability 的看法」）</li>
+  </ul>
+
+  <div class="callout">
+    Interview 产出的不是「草稿」（Cycle 06 没 draft 概念），而是<strong>一批针对该话题的 Create Signal 候选</strong>，在 Signals 页面里依次出现。这样用户花 10 分钟做深挖，接下来几天能看到直接产出。
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Refresh Voice — 持续校准入口</h2>
+
+  <p>VOICE.md 不是 Day 0 做完就结束。Cycle 06 Onboarding 只是起点，持续校准通过三个渠道：</p>
+
+  <h3>1. Chat Seeds 自动累积</h3>
+  <p>用户在 Chat 里说的每一句话都进 <code>memory/</code>。每 30 天 Agent 检查一次 VOICE.md 是否和最近的 Chat seeds 一致 —— 如果用户最近在聊 fintech 但 VOICE.md 只有 AI topic，Agent 会触发一个 Signal 建议更新。</p>
+
+  <h3>2. 用户 action 反馈</h3>
+  <p>Signal 被采纳 / 跳过 / 编辑的数据是最强的校准信号：</p>
+  <ul>
+    <li>某类 Signal 用户持续跳过 → 该类型降低优先级</li>
+    <li>用户编辑回复时总往某方向改 → 更新 Voice profile</li>
+    <li>某类话题的 Create Signal 每次都被采纳 → 加入 Topics</li>
+  </ul>
+
+  <h3>3. Voice Learning Signal（L8）</h3>
+  <p>这是 Cycle 05 通知规则里的 L8。在 Cycle 06 重新定义为：当 Agent 检测到 VOICE.md 和用户实际行为 drift 时，生成一条 Signal（非 email，放在 Signals 页里），让用户一键进入 Refresh Voice 流程。</p>
+
+  <div class="divider"></div>
+
+  <h2>Day 0 成功指标</h2>
+
+  <table class="spec-table">
+    <tr><th>指标</th><th>目标</th><th>说明</th></tr>
+    <tr><td>Onboarding 完成率（到 Step 4）</td><td>&gt; 80%</td><td>Skip 到 Quick 也算完成</td></tr>
+    <tr><td>First Signal 出现时间</td><td>&lt; 1 小时</td><td>从 VOICE.md 保存算起</td></tr>
+    <tr><td>First Signal 用户 action 率</td><td>&gt; 40%</td><td>采纳 / 点击查看详情都算 action</td></tr>
+    <tr><td>Week 1 Signal 日均采纳率</td><td>&gt; 25%</td><td>用户实际点「在 X 上回复/发布」</td></tr>
+    <tr><td>Week 1 VOICE.md 编辑次数</td><td>&gt;= 1</td><td>证明用户感知到 VOICE.md 的存在和可控</td></tr>
+  </table>
+
+  <h2>Onboarding 的产出清单（Day 0 必须有）</h2>
+  <ul>
+    <li><strong>VOICE.md</strong>：Topics（至少 2 个）、Voice profile（一段描述）、Audience（目标受众）、Goal（增长 / 找人 / 带流量）、Anti-patterns（可选）</li>
+    <li><strong>Research topics 初始列表</strong>：0-3 个（可以空）</li>
+    <li><strong>Signal 优先级设置</strong>：用户勾选的 2 个 Signal 类型</li>
+    <li><strong>ideas.md 种子</strong>：从 X history auto-infer 出的 5-8 个 idea 候选（用户可 review）</li>
+    <li><strong>通知偏好</strong>：默认 push 开启（时效性 Signal），email fallback 24h</li>
+  </ul>
+
+  <div class="callout amber">
+    <strong>Day 0 不要求：</strong>完整稳定的 VOICE 画像、对用户 identity 的高置信度归纳、覆盖所有话题、完美匹配用户自我认知。Day 0 只要求 <strong>Signals 能开始工作</strong>。
+  </div>
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB: ENGAGE
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-engage" class="spec-section">
+<div class="prose">
+  <div class="prose-label">Engage — 参与对话</div>
+  <h1>从「帮你写」到「帮你回」</h1>
+
+  <p>Engage 是 Signals 的核心类型，也是第一个上线的功能。<strong>在 X 上，最有效的增长方式不是发帖，而是在对的时间回复对的帖子。</strong></p>
+  <p>Agent 替你扫描，帮你筛选，给你建议回复。你编辑后一键发送。</p>
+
+  <div class="divider"></div>
+
+  <h2>两个层次</h2>
+
+  <div class="cmp-row">
+    <div class="cmp-card teal">
+      <div class="cmp-card-label">Inbound — 被回复</div>
+      <h4>「有人在你的帖子下说了值得回复的话」</h4>
+      <p>你的 Follower 的回复 · 任何人的回复 · 被引用推文 · 高质量回复 vs 简单点赞的区分</p>
+    </div>
+    <div class="cmp-card peach">
+      <div class="cmp-card-label">Outbound — 主动发现</div>
+      <h4>「外面有个对话你应该加入」</h4>
+      <p>你关注领域的热门讨论帖 · 有人提到了你 · 趋势中你有独特角度的话题</p>
+    </div>
+  </div>
+
+  <div class="callout amber">
+    <strong>命名约定（2026-04-20 sync 对齐）：</strong> 内部 / 代码 / 文档统一用 <strong>Inbound</strong>（被回复）和 <strong>Outbound</strong>（主动发现）。先前的 Layer A / Layer B 已废弃。<strong>面向用户的 UI 文案（section header、filter tab）暂沿用 <code>INBOX · WORTH REPLYING</code> 和 <code>DISCOVER · WORTH JOINING</code></strong>，待另行决定是否替换为更口语的表达。
+  </div>
+
+  <h3>为什么先做 Inbound</h3>
+  <div class="callout">
+    Inbound 数据确定性高 — 是你自己的帖子，不存在搜错的问题。<br>
+    Inbound 用户感知强 — 「有人回了你」比「外面有个对话」更紧迫。<br>
+    Inbound 验证了核心 UX 循环 — Signal 卡片 → 查看详情 → 采取行动。<br>
+    Inbound 复用了现有代码 — reply 生成已经做过，只是触发方式变了。
+  </div>
+
+  <div class="callout blue">
+    <strong>Outbound 新增依赖（4/20 sync）：</strong> Outbound Brief 的 Angle 生成需要<strong>读回复者的 profile / 近期发帖</strong>（和 Inbound 只需读原帖不同）。这意味着 Outbound 比 Inbound 多一层 profile API 调用。实现时通过后端链式 API（Twitter 第三方 → DateX → Official）对 Agent 透明，Agent 层只请求"读 profile"即可。
+  </div>
+
+  <h2>Engage Brief 数据模型（4/20 sync 定稿）</h2>
+  <p>每一张 Engage Signal 卡片背后对应一个 <strong>Engage Brief</strong> 对象。和 Create Brief 一样，Cycle 6 Engage Brief 只有核心几字段 —— Inbound 和 Outbound 的区别只在 <strong>Reference 的构成</strong> 和 <strong>生成 Angle 时读哪个 profile</strong>。</p>
+
+  <div class="term-grid">
+    <div class="term-key">Variant</div>
+    <div class="term-val"><strong>Inbound</strong>（被回复） vs <strong>Outbound</strong>（主动发现）。两者共用 Why + Angle + Draft Reply 结构，只在 Reference 字段和 profile 读取要求上不同。</div>
+    <div class="term-key">Reference (Inbound)</div>
+    <div class="term-val"><code>{ original_tweet, reply_posts[] }</code>。<strong>original_tweet</strong> = 用户自己的原帖；<strong>reply_posts</strong> = Tomo 从该帖回复中筛出的高质量回复（1 条或多条，每条带回复者 profile hint）。<strong>Inbound 比 Outbound 多一层 API 调用</strong>：为每个 reply_post 读取回复者的 profile / 近期发帖，才能为"回 Ta"这个动作生成有针对性的 Angle 和 Draft Reply。</div>
+    <div class="term-key">Reference (Outbound)</div>
+    <div class="term-val"><code>{ original_tweet, author_context? }</code>。<strong>original_tweet</strong> = 外部值得加入的一条帖子（趋势中、被你 @ 的、关注账号新帖等）；author_context 只在需要时读取原帖作者的 profile。Outbound 的<strong>搜索策略</strong>是关键（怎么搜出值得加入的外部帖子），这部分由 Agent 内部 Capture 阶段决定，不暴露到 Brief 字段。</div>
+    <div class="term-key">Why</div>
+    <div class="term-val"><strong>一句大白话</strong>说清楚"为什么这条值得回"。Inbound 可能是 "48k 粉丝实质反驳，值得续聊"；Outbound 可能是 "VC 在推测，缺第一手使用数据 —— 你有"。</div>
+    <div class="term-key">Angle</div>
+    <div class="term-val"><strong>建议回复的切入角度</strong>，从 VOICE.md + Reference 交叉生成。Cycle 6 先做 1 个 Angle/reply。Inbound 多 reply 情况下每条 reply 各自有独立的 Angle。</div>
+    <div class="term-key">Draft Reply</div>
+    <div class="term-val">建议的回复正文。和 Create Brief 同规则：<strong>异步按需生成</strong>。Signal 卡片浮出时 <em>不</em> 预生成 —— 用户在详情面板选中某条 reply（Inbound 多 reply 时）或直接点"让 Tomo 写"（单 reply 时）才实时生成。</div>
+  </div>
+
+  <div class="callout amber">
+    <strong>关键决策：</strong>
+    <ul style="margin-top:8px;margin-bottom:0;">
+      <li><strong>Inbound 需读回复者 profile。</strong> 对每条被筛出的 reply，Agent 要读对方近期发帖/bio 作为 Angle 生成输入 —— 没这层就写不出针对性回复。实现上走后端链式 API（Twitter 第三方 → DateX → Official），对 Agent 透明。</li>
+      <li><strong>Draft Reply 异步生成。</strong> 多 reply Inbound 的详情面板里，用户必须先选一条 reply，再点"让 Tomo 写"才触发生成 —— 一上来不为每条 reply 预生成 3 份文本。</li>
+      <li><strong>Bespoke 原则：</strong>每条 Draft Reply 必须针对那条具体对话生成。prompt 必须包含：原帖 + reply（Inbound）或原帖 + author context（Outbound）+ VOICE.md 独特角度。可换到另一条帖子下也通顺的回复 = 质量不合格，拒绝输出。</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Engage Signal — 卡片合并规则（同一原帖多次 scan）</h2>
+  <p>同一原帖在多次 heartbeat scan 中产出新回复时，<strong>不新建卡片，合并更新</strong>同一张 Signal 卡片。</p>
+
+  <div class="callout">
+    <strong>设计原则：</strong>一张原帖对应一张 Signal。用户的认知单位是「这条帖子需要我回复」，而不是「第一次扫描找到 3 条，第二次又找到 2 条」。Feed 里出现两张同一个帖子的卡片会让用户困惑，且浪费 feed 空间。
+  </div>
+
+  <h3>合并行为规范</h3>
+  <table class="spec-table">
+    <tr><th>属性</th><th>行为</th></tr>
+    <tr><td>卡片是否新建</td><td><strong>否</strong> — 同一 <code>tweet_id</code> 的原帖，始终只有一张 Signal 卡片</td></tr>
+    <tr><td>Trigger Chip 更新</td><td><code>N new replies</code> 中的 N 累计更新（如 3 → 5），显示当前未处理回复总数</td></tr>
+    <tr><td>时间戳更新</td><td>卡片右上角时间戳刷新为最新 scan 时间（如 <code>2h ago</code> → <code>just now</code>）</td></tr>
+    <tr><td>Feed 位置</td><td>合并更新后，卡片<strong>上浮至 feed 顶部</strong>（相当于重新激活，按最新 scan 时间排序）</td></tr>
+    <tr><td>视觉提示</td><td>卡片左侧出现 teal 细竖条（<code>3px</code>）+ 卡片顶部显示小 badge <code>+2 new</code>，表示本次 scan 新增的回复数。3 秒后 badge 消失，竖条保留直到用户打开详情面板</td></tr>
+    <tr><td>Acted 状态例外</td><td>如果用户已对该 Signal 标记 acted，再次扫描出新回复时<strong>重新激活</strong>该卡片（移出 Acted section，状态恢复为 pending），并显示 <code>+N new after acted</code> chip</td></tr>
+  </table>
+
+  <h3>详情面板内的回复列表</h3>
+  <p>打开详情面板后，Panel 内的回复列表展示<strong>累计所有 scan 筛出的高质量回复</strong>，而非单次 scan 结果。回复按时间倒序排列，新增回复在顶部显示 <code>New</code> tag（蓝色，3 秒后消失）。</p>
+
+  <h3>para-service 实现要点</h3>
+  <table class="spec-table">
+    <tr><th>场景</th><th>处理方式</th></tr>
+    <tr><td>Agent 推送同一 tweet_id 的新 Engage 数据</td><td>查 <code>signals</code> 表是否存在该 <code>tweet_id</code> 的未过期 Signal → 存在则 UPSERT，更新 reply count、更新 <code>updated_at</code>，追加新回复到 <code>engage_replies</code> JSONB；不存在则 INSERT 新 Signal</td></tr>
+    <tr><td>SSE 事件</td><td>更新时推送 <code>signal_updated</code>（而非 <code>signal_created</code>），前端收到后刷新对应卡片并触发上浮动画</td></tr>
+    <tr><td>Acted Signal 重新激活</td><td>Signal <code>status</code> 从 <code>acted</code> 改回 <code>pending</code>，前端收到 <code>signal_updated</code> 后将卡片移回主列表</td></tr>
+  </table>
+
+  <h2>Create Signal — Scan 行为（一次性时机窗口）</h2>
+
+  <p>Create Signal 和 Engage Signal 的 scan 模型<strong>根本不同</strong>。Engage 的认知单位是「一条持续增长的对话线」，所以 UPSERT 是自然的。Create 的认知单位是「一个时机窗口」——窗口要么开着、要么关了。一旦窗口关闭，rescan 不会让它复活；只有下一次真正的新机会才能生成新卡片。</p>
+
+  <div class="callout amber">
+    <strong>核心规则：对 Create Signal，scan 只能做两件事 — 新建卡片，或让卡片过期。不会 re-surface（重新上浮）已有卡片。</strong>
+  </div>
+
+  <h3>Dedup Key（去重锚点）</h3>
+  <table class="spec-table">
+    <tr><th>子类型</th><th>Dedup Key</th><th>说明</th></tr>
+    <tr><td>Create · Trend</td><td><code>topic_slug</code> + <code>trend_date</code>（日粒度）</td><td>同一话题在同一天内只生成一张卡片。3 天后同一话题再次出现 → INSERT 新卡片（新机会）</td></tr>
+    <tr><td>Create · Idea</td><td><code>idea_id</code>（来自 ideas.md）</td><td>同一条 idea 只有一张活跃卡片。acted 或 expired 后，若该 idea 再次匹配趋势 → INSERT 新卡片</td></tr>
+    <tr><td>Create · Activity</td><td><code>chat_seed_id</code></td><td>每条 Chat seed 对应一张卡片，无更新</td></tr>
+  </table>
+
+  <h3>Rescan 时的处理逻辑</h3>
+  <table class="spec-table">
+    <tr><th>场景</th><th>处理方式</th></tr>
+    <tr><td>Scan 发现同一 topic_slug 当天已有 pending 卡片</td><td>静默更新 <code>velocity</code> chip 数字（如 +340% → +420%）。<strong>不上浮卡片，不推送通知</strong>。用户已知道这个机会，不需要再被打扰。</td></tr>
+    <tr><td>Scan 发现同一 topic_slug 当天已有 acted 卡片</td><td>no-op。用户已处理，不重新激活。（与 Engage 的 re-activation 逻辑相反）</td></tr>
+    <tr><td>时机窗口关闭（趋势热度跌回基线 / 超过 <code>window_hours</code>）</td><td>卡片状态设为 <code>expired</code>，前端显示灰色 + <code>window closed</code> label，沉底。<strong>不删除</strong>，保留作为历史。</td></tr>
+    <tr><td>同一话题 3 天后再次出现</td><td>INSERT 全新卡片。这是新机会，不是旧机会的更新。</td></tr>
+  </table>
+
+  <h3>para-service 实现要点</h3>
+  <table class="spec-table">
+    <tr><th>字段</th><th>说明</th></tr>
+    <tr><td><code>dedup_key</code></td><td>Engage 用 <code>tweet_id</code>；Create · Trend 用 <code>{topic_slug}:{trend_date}</code>；Create · Idea 用 <code>idea:{idea_id}</code>；Create · Activity 用 <code>seed:{chat_seed_id}</code></td></tr>
+    <tr><td><code>window_hours</code></td><td>Create Signal 的时机窗口时长（由 agent 在生成 Signal 时估算，例如 Trend 通常 6–12h）</td></tr>
+    <tr><td><code>expires_at</code></td><td><code>created_at + window_hours</code>。cron 任务每次 heartbeat 检查过期 Create Signal，批量更新状态为 <code>expired</code>，推送 <code>signal_expired</code> SSE 事件</td></tr>
+    <tr><td>SSE 事件</td><td>新建 → <code>signal_created</code>；velocity 静默更新 → 无事件；过期 → <code>signal_expired</code>（前端将卡片灰化沉底）</td></tr>
+  </table>
+
+  <h2>X API 依赖</h2>
+  <table class="spec-table">
+    <tr><th>功能</th><th>Endpoint</th><th>Plan</th></tr>
+    <tr><td>获取自己的帖子</td><td><code>GET /2/users/:id/tweets</code></td><td>Pay-per-use</td></tr>
+    <tr><td>搜索回复</td><td><code>GET /2/tweets/search/recent</code> (conversation_id)</td><td>Pay-per-use</td></tr>
+    <tr><td>点赞者</td><td><code>GET /2/tweets/:id/liking_users</code></td><td>Pay-per-use</td></tr>
+    <tr><td>话题搜索</td><td><code>GET /2/tweets/search/recent</code></td><td>Pay-per-use</td></tr>
+    <tr><td>提及</td><td><code>GET /2/users/:id/mentions</code></td><td>Pay-per-use</td></tr>
+    <tr><td>发送回复</td><td><code>POST /2/tweets</code> (reply)</td><td>Pay-per-use</td></tr>
+  </table>
+  <p>所有 endpoint 在 pay-per-use tier 均可用。10 用户预估月费 ~$760（$0.005/read, $0.01/write）。</p>
+
+  <h2>Signal 卡片 → 详情面板 → 行动</h2>
+
+  <h3>单条回复的 Engage（如 quoted、单次 Inbox）</h3>
+  <p>详情面板展示原帖 + Tomo 分析，底部一个 Ask Tomo 按钮（点击后才展开建议回复），footer 直接显示「在 X 上回复 ↗」。</p>
+
+  <h3>多条回复的 Engage · Inbox — 回复选择交互</h3>
+  <p>当一张 Engage · Inbox Signal 包含多条 Tomo 筛出的回复时，<strong>用户需要先选择回复哪一条</strong>，再 Ask Tomo 获取建议文案。</p>
+
+  <div class="callout">
+    <strong>为什么是选择后再 Ask Tomo：</strong>每条回复的语境完全不同，Tomo 的建议必须针对具体对象生成。设计和 Create Signal 保持一致 — 信息先全部展示，用户主动触发才生成文案，避免一打开面板就自动生成多份不相关的建议文本。
+  </div>
+
+  <h4>交互步骤</h4>
+  <table class="spec-table">
+    <tr><th>步骤</th><th>用户操作</th><th>UI 响应</th></tr>
+    <tr><td>1. 打开面板</td><td>点击 Signal 卡片</td><td>面板滑入。展示「你的原帖」+ 「Tomo 筛出的回复（N / 总数）」列表。每条回复左侧有空心圆形单选指示器。Footer 的「在 X 上回复 ↗」按钮为<strong>禁用</strong>状态，提示「先选择一条回复」。</td></tr>
+    <tr><td>2. 选择回复</td><td>点击任意回复条目</td><td>该条目背景变为 teal-50，左侧圆形指示器填充为 teal（实心）。同时在该条目下方展开 <strong>Ask Tomo</strong> 按钮（虚线边框，与 Create 风格一致）。Footer「在 X 上回复 ↗」按钮<strong>激活</strong>。其他条目保持未选中状态。</td></tr>
+    <tr><td>3a. Ask Tomo（可选）</td><td>点击选中条目下的 Ask Tomo 按钮</td><td>按钮消失，展示 loading（「Tomo 正在生成…」），~1s 后出现可编辑的建议回复文本框（teal 样式，与 Create 一致）。用户可直接编辑内容。</td></tr>
+    <tr><td>3b. 不 Ask Tomo</td><td>跳过 Ask Tomo，直接点 footer</td><td>直接跳转到对应回复的原帖 URL（没有预填内容）。</td></tr>
+    <tr><td>4. 行动</td><td>点击「在 X 上回复 ↗」</td><td>将建议文本复制到剪贴板（如已生成），弹 toast「已复制」，然后跳转到 X 原帖。</td></tr>
+    <tr><td>5. 跳过</td><td>点击 footer「跳过」</td><td>当前 Signal 标记 skipped，面板关闭，卡片移入 Acted section。</td></tr>
+  </table>
+
+  <h4>回复条目内的 Tomo 推荐理由</h4>
+  <p>每条筛出的回复下方显示 Tomo 推荐原因（小字，teal 色），例如：<code>48k 粉丝，实质性反驳能引发讨论</code>。这帮助用户在选择前判断优先级，不需要 Ask Tomo 才能理解为什么这条值得回。</p>
+
+  <h4>Footer 状态机</h4>
+  <table class="spec-table">
+    <tr><th>状态</th><th>「跳过」</th><th>「在 X 上回复 ↗」</th></tr>
+    <tr><td>未选择任何回复</td><td>显示，可点击</td><td>显示但<strong>禁用</strong>（灰色），hover 提示「先选择一条回复」</td></tr>
+    <tr><td>已选择，未 Ask Tomo</td><td>显示</td><td>激活（teal），点击跳转原帖（无预填）</td></tr>
+    <tr><td>已选择 + Ask Tomo 完成</td><td>显示</td><td>激活（teal），点击复制文本 + 跳转</td></tr>
+  </table>
+
+  <p>完整交互请看 <strong>Interactive Mock</strong> tab — 点击「Building got democratized」Signal 卡片查看。</p>
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB: CREATE
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-create" class="spec-section">
+<div class="prose">
+  <div class="prose-label">Create — 内容时机</div>
+  <h1>不是帮你写，是告诉你「现在写什么」</h1>
+
+  <p>Create 是一个 <strong>idea 信号放大器</strong>。当前 Tomo agent 已经有完整的 idea pipeline（趋势扫描 → ideas.md → content-craft）。Create Signal 把「时机」维度加进来：<strong>这个话题现在正在爆发，你有独特角度，今天发比明天发效果好 10 倍。</strong></p>
+
+  <div class="divider"></div>
+
+  <h2>Create Brief 数据模型（4/20 sync 定稿）</h2>
+  <p>每一张 Create Signal 卡片背后对应一个 <strong>Create Brief</strong> 对象。Cycle 6 的 Brief 只有三个核心字段，其他一切（tag、metrics、来源类型）都是附加元数据，不是 Brief 主体。</p>
+
+  <div class="term-grid">
+    <div class="term-key">Why</div>
+    <div class="term-val"><strong>一句大白话</strong>说清楚"为什么值得在当下发这条"。面向用户语言，不是系统指标。<br>示例：「Claude 5 今早发布定价，你昨天 ship 了一个基于它的 demo — 今天发 before 48h 窗口关闭」</div>
+    <div class="term-key">Reference</div>
+    <div class="term-val"><strong>触发 Brief 的外部引用</strong>，带 <code>type</code> 字段标注类型。<br>字段：<code>{ type: "tweet" | "news" | "trend" | "idea" | "chat_seed", url?, snippet, author? }</code><br>UI 在卡片详情中以"原素材块"呈现，一条 Brief 只有 1 条 Reference（多条说明应该拆成多个 Brief）。</div>
+    <div class="term-key">Angle</div>
+    <div class="term-val"><strong>写作角度</strong>—— 从用户 VOICE.md + Reference 交叉生成的切入点。<br><strong>Cycle 6 先做 1 个 Angle（MVP）</strong>，后续可扩展成多 Angle 候选（让用户选 A/B）。<br>Angle 字段：<code>{ description, tags?: string[] }</code>，不包含已生成好的推文正文（推文是<strong>异步按需生成</strong>，见下）。</div>
+  </div>
+
+  <div class="callout amber">
+    <strong>关键决策：</strong>
+    <ul style="margin-top:8px;margin-bottom:0;">
+      <li><strong>Brief 生命周期在给用户 Signal 后结束。</strong> Agent 不跟踪用户点了 Signal 之后的后续行为（是否发、怎么改、有没有互动）—— 后续行为反馈通过 Stats / Engage metrics 另一条链路，Brief 这头解耦。</li>
+      <li><strong>建议推文异步生成。</strong> Brief 生成时 <em>不</em> 预生成完整推文正文；Signal 卡片浮出时只展示 Why + Reference + Angle。用户在详情面板点 <strong>「让 Tomo 写」</strong> 按钮时才实时生成推文正文（~1s），避免预生成浪费算力、避免用户没看就被老内容占位。</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Create Signal 卡片 & 详情面板 样式规格</h2>
+
+  <p>Cycle 6 Create Signal 的卡片和详情面板必须严格对应 Brief 三字段结构。以下是实现契约。</p>
+
+  <h3>Signal 卡片（Feed 中的紧凑态）</h3>
+  <table class="spec-table">
+    <tr><th>槽位</th><th>内容</th><th>样式</th></tr>
+    <tr><td>Type Badge（Slot 1）</td><td><code>● CREATE</code></td><td>amber 色点 + 全大写小字（参考 Overview → Badge Taxonomy）</td></tr>
+    <tr><td>卡片标题</td><td>Brief.Why 的<strong>前 40–60 字</strong>（一句大白话，非截断加 …）</td><td>15px / 600 weight / n-900；写作时就要保证 Why 开头即完整，可直接截断的短句</td></tr>
+    <tr><td>Reference Preview</td><td>Brief.Reference 的极简预览：<code>type</code> icon + <code>author?</code> + <code>snippet</code>（≤ 80 字）</td><td>灰色底（n-100）+ 14px / n-700；type icon 用 amber-500 小图标区分 tweet / news / trend / idea / chat_seed</td></tr>
+    <tr><td>Angle Hint</td><td>Brief.Angle.description 的<strong>前 30–40 字</strong>，前缀标签 <code>angle:</code>（teal-600 小字）</td><td>13.5px / 500 weight / n-800；和 Reference preview 视觉区分开（angle 是 teal-tinted 左侧竖条，Reference 是中性灰底）</td></tr>
+    <tr><td>Trigger Chip（Slot 2）</td><td>可选 <code>trending fast</code> / <code>~Nh window</code></td><td>遵守 Overview → Trigger Chip 规范，至多 2 个</td></tr>
+    <tr><td>Time / Urgency（Slot 3）</td><td><code>~Nh window</code>（peach，强提示）或 <code>Nh ago</code></td><td>右对齐，遵守 Overview → Slot 3 规范</td></tr>
+    <tr><td>主 CTA</td><td><strong>没有主 CTA 在卡片上</strong>——卡片点击即进详情面板</td><td>整卡 hover 态有微弱 teal 边框高亮，光标变 pointer</td></tr>
+  </table>
+
+  <div class="callout">
+    <strong>和 Cycle 5 卡片的区别：</strong>Cycle 5 的 Create 卡片会<strong>预展示已生成的推文正文</strong>（让用户"扫一眼决定"）。Cycle 6 取消预生成 —— 卡片只展示 Brief 三字段的摘要；推文正文在详情面板主动触发后才生成。原因：Brief 质量 > 推文质量；用户 Feed 的注意力是稀缺资源，卡片要密集可扫读，不能被每张长推文占满。
+  </div>
+
+  <h3>详情面板（点卡片后展开）</h3>
+  <table class="spec-table">
+    <tr><th>区块</th><th>内容</th><th>交互</th></tr>
+    <tr><td>1. 标题区</td><td>Brief.Why 全文（展开后不截断）</td><td>只读文本</td></tr>
+    <tr><td>2. Reference 原素材块</td><td>Brief.Reference 完整展开：原帖截图 / news snippet / trend 关键词 / idea 原文 / chat_seed 原句</td><td>若 Reference 含 <code>url</code>，右上角显示「在 X 上查看 ↗」次级按钮，新窗口打开；否则只是只读展示</td></tr>
+    <tr><td>3. Angle 区</td><td>Brief.Angle.description 全文 + Angle.tags（若有）</td><td>只读；未来扩展多 Angle 时这里变成 A/B/C 切换器，Cycle 6 先单 Angle</td></tr>
+    <tr><td>4. 推文生成区（核心交互）</td><td>默认态：空白 + 虚线边框文本框 + 中央按钮 <strong>「让 Tomo 写 ✨」</strong>（teal）。点击后按钮消失、文本框切到 loading（「Tomo 正在写…」~1s），然后<strong>填入可编辑推文正文</strong>。</td><td>生成后用户可直接编辑；若不满意可点 <strong>「重写」</strong>（次级按钮）再次调用生成</td></tr>
+    <tr><td>5. Footer</td><td>左：「跳过」（次级）；右：「在 X 发帖 ↗」（主 CTA，生成后才激活）</td><td>点击「在 X 发帖」→ 复制推文到剪贴板 + 跳转 X compose（若平台支持 deep link，预填参数）</td></tr>
+  </table>
+
+  <div class="callout blue">
+    <strong>异步生成实现要点：</strong>
+    <ul style="margin-top:8px;margin-bottom:0;">
+      <li>前端：打开详情面板时不触发生成；用户点「让 Tomo 写」按钮才发请求</li>
+      <li>后端：POST <code>/briefs/:brief_id/generate</code>，服务端用 Brief.{Why, Reference, Angle} + VOICE.md 实时生成，返回 <code>draft_text</code></li>
+      <li>缓存：同一 Brief 的最近一次生成结果缓存到 session 级（用户在详情面板里切走再切回，不重生）；点「重写」显式清缓存</li>
+      <li>超时：生成请求 &gt; 3s 显示 loading 动画 + 兜底文案「Tomo 正在想…」；&gt; 10s 失败则提示重试</li>
+    </ul>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>Idea 三来源的交叉匹配</h2>
+
+  <div class="cmp-row" style="grid-template-columns:1fr 1fr 1fr;">
+    <div class="cmp-card amber">
+      <div class="cmp-card-label">来源 1 — 趋势扫描</div>
+      <p>Agent heartbeat 跑 Search API，发现升温话题。<br><br><strong>现有能力</strong>，对应 <code>trend-scans/</code></p>
+    </div>
+    <div class="cmp-card teal">
+      <div class="cmp-card-label">来源 2 — Engage 反馈</div>
+      <p>你回复别人的帖子，哪些回复高互动？说明这个话题你有说服力。<br><br><strong>Cycle 06 新增</strong></p>
+    </div>
+    <div class="cmp-card blue">
+      <div class="cmp-card-label">来源 3 — ideas.md</div>
+      <p>你积累的 idea backlog。有些等了几天，但现在趋势刚好对上。<br><br><strong>现有能力</strong></p>
+    </div>
+  </div>
+
+  <h3>Create vs 现有 Agent 自动发帖</h3>
+  <div class="callout amber">
+    关键区别：现有 agent 是「我帮你写，帮你发」（Autopilot）。Create Signal 是「我告诉你时机和角度，你来决定写不写」（Copilot）。这不是倒退 — Agent 擅长扫描和分析，不是替你想 idea。
+  </div>
+
+  <h2>Create Signal 类型全集</h2>
+  <p>Create Signal 不是单一来源。下面是实现时必须覆盖的 <strong>7 种 Signal 类型</strong>，分成 3 类。实现 Create 功能时，每一种都应该能独立触发一张卡片，并在 Feed 里正确分组。</p>
+
+  <div class="divider"></div>
+
+  <h3>Category A — 外部信号驱动（Trend-based）</h3>
+  <p>Agent 主动扫描 X / News API 发现的时效信号。来源：Search API + News API + 你关注的账号列表。</p>
+
+  <h4>A1. Trend × Your Angle（趋势 × 你的角度）</h4>
+  <table class="spec-table">
+    <tr><th>字段</th><th>定义</th></tr>
+    <tr><td>触发条件</td><td>某话题 24h 内讨论量 >200% 增长 AND 话题关键词与 VOICE.md topics 重合</td></tr>
+    <tr><td>数据来源</td><td>X Trends API + Search API（按用户 topic 关键词搜索）</td></tr>
+    <tr><td>卡片文案示例</td><td>「Claude 5 定价发布 — 你有第一手 AI 成本数据」</td></tr>
+    <tr><td>建议行动</td><td>发一条独立帖子（不是回复），从用户独特角度切入</td></tr>
+    <tr><td>Tag 机制</td><td>可选 tag 趋势发起者（如果有明显的一个人）</td></tr>
+    <tr><td>频率</td><td>~1/天</td></tr>
+  </table>
+
+  <h4>A2. Competitor / Industry Update（竞品/行业动态）</h4>
+  <table class="spec-table">
+    <tr><th>字段</th><th>定义</th></tr>
+    <tr><td>触发条件</td><td>用户 Settings 里关注的公司/产品/人发布新消息（新产品、新定价、公开数据、融资等）</td></tr>
+    <tr><td>数据来源</td><td>News API + 关注账号的 user timeline</td></tr>
+    <tr><td>卡片文案示例</td><td>「Devin 公开了 agent benchmark 数据 — 你的数据对比会有很高的信息量」</td></tr>
+    <tr><td>建议行动</td><td>对比帖 / 补充数据帖 / quote tweet 加评论</td></tr>
+    <tr><td>Tag 机制</td><td><strong>必须</strong>在帖子中 tag 原公司/产品账号（算法放大）</td></tr>
+    <tr><td>频率</td><td>~1-2/周</td></tr>
+  </table>
+
+  <h4>A3. High-performing Reply → Original（高表现回复展开为原创）</h4>
+  <table class="spec-table">
+    <tr><th>字段</th><th>定义</th></tr>
+    <tr><td>触发条件</td><td>用户在过去 72h 内发的某条 Engage 回复 likes >100 或互动倍数 >3x 原帖平均</td></tr>
+    <tr><td>数据来源</td><td>Engage 执行记录 + Twitter metrics 轮询</td></tr>
+    <tr><td>卡片文案示例</td><td>「你关于 agent reliability 的回复获得 340 likes — 展开写一条 thread？」</td></tr>
+    <tr><td>建议行动</td><td>把 280 字回复展开成 thread，加入数据点和实际案例</td></tr>
+    <tr><td>Tag 机制</td><td>可选引用/tag 原帖作者（表示致敬和延续对话）</td></tr>
+    <tr><td>频率</td><td>~2-3/周</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <h3>Category B — 用户 Backlog 驱动（Idea-based）</h3>
+  <p>用户已有的 idea 储备，Agent 只负责匹配时机。来源：ideas.md。</p>
+
+  <h4>B1. Idea × Trend Window（Idea 时机匹配）</h4>
+  <table class="spec-table">
+    <tr><th>字段</th><th>定义</th></tr>
+    <tr><td>触发条件</td><td>ideas.md 中某条「待写」idea 的关键词 + 当前外部趋势重合</td></tr>
+    <tr><td>数据来源</td><td>ideas.md 全量扫描 × 当天 trend scan</td></tr>
+    <tr><td>卡片文案示例</td><td>「你 3 天前存的『Distribution Tax』idea — 今天 @packyM 在聊这个」</td></tr>
+    <tr><td>建议行动</td><td>发独立帖子（从 idea 原角度），非 @packyM 的 reply</td></tr>
+    <tr><td>Tag 机制</td><td>可选提及同时在讨论此话题的关键人物</td></tr>
+    <tr><td>频率</td><td>~1-2/周</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <h3>Category C — 用户活动驱动（Activity-based）</h3>
+  <p>用户在 Tomo 外的真实活动触发，来源是 <strong>Chat seed</strong>（用户主动告诉 agent 今天在做什么），不是自动抓取外部应用。这是把「Learn / Feedback / Build in public」三种发帖反射动作做成产品机制。</p>
+
+  <div class="callout blue">
+    <strong>数据契约：</strong>Category C 的 Signal 依赖用户在 Chat 里主动给 seed。Agent 不读用户的邮箱/Notion/ChatGPT 对话。用户 30 秒输入 &gt; 自动抓取。详见 Chat tab。
+  </div>
+
+  <h4>C1. Learn in Public（学习成果公开）</h4>
+  <table class="spec-table">
+    <tr><th>字段</th><th>定义</th></tr>
+    <tr><td>触发条件</td><td>用户在 Chat 里提到「听了/读了/看了」某 podcast / newsletter / 文章 / 视频</td></tr>
+    <tr><td>数据来源</td><td>Chat seed 解析 + 提及的作者 X 账号识别</td></tr>
+    <tr><td>卡片文案示例</td><td>「你说今早听了 Lenny's Podcast 第 180 集 — 里面有几个 quote 值得发一条，tag @lennysan」</td></tr>
+    <tr><td>建议行动</td><td>短帖 + 引用最有共鸣的一句话（截图可选） + tag 原作者</td></tr>
+    <tr><td>Tag 机制</td><td><strong>必须</strong>tag 原作者账号（既是致谢，也能获得作者转发的概率）</td></tr>
+    <tr><td>频率</td><td>按用户输入频率</td></tr>
+  </table>
+
+  <h4>C2. Feedback in Public（产品反馈公开）</h4>
+  <table class="spec-table">
+    <tr><th>字段</th><th>定义</th></tr>
+    <tr><td>触发条件</td><td>用户在 Chat 里提到「试了/用了/发现」某个产品（特别是早期 AI 产品）</td></tr>
+    <tr><td>数据来源</td><td>Chat seed 解析 + 产品官方账号 / founder 账号识别</td></tr>
+    <tr><td>卡片文案示例</td><td>「你说试了 Cursor 的新 composer 功能 — 发一条具体反馈，tag @cursor_ai 和 @amanrsanger，早期产品 founder 回复率 ~90%」</td></tr>
+    <tr><td>建议行动</td><td>具体的、非套话的反馈帖 + tag 产品官方 + tag founder</td></tr>
+    <tr><td>Tag 机制</td><td><strong>必须</strong>同时 tag 产品官方账号和 founder 个人账号</td></tr>
+    <tr><td>频率</td><td>按用户输入频率</td></tr>
+  </table>
+
+  <h4>C3. Build in Public（构建成果公开）</h4>
+  <table class="spec-table">
+    <tr><th>字段</th><th>定义</th></tr>
+    <tr><td>触发条件</td><td>用户在 Chat 里提到「做了/跑通了/shipped」某个 demo / feature / project — 尤其是围绕新模型/新 API</td></tr>
+    <tr><td>数据来源</td><td>Chat seed + 已知新模型发布时间表（从 Research briefing 交叉引用）</td></tr>
+    <tr><td>卡片文案示例</td><td>「Claude 5 昨天发布，你今天用它做了一个 demo — 录屏 + 短描述 + tag @AnthropicAI 的 DevRel」</td></tr>
+    <tr><td>建议行动</td><td>demo 录屏（建议 1-2 分钟 Screen Studio）+ 1 句 so-what + tag lab 官方 / DevRel 账号</td></tr>
+    <tr><td>Tag 机制</td><td><strong>必须</strong>tag 底层模型/API 的官方账号 + DevRel lead（这些账号主动在找用户案例）</td></tr>
+    <tr><td>频率</td><td>按用户输入频率</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <h3>Signal 类型全集速查表</h3>
+  <table class="spec-table">
+    <tr><th>ID</th><th>类型</th><th>Category</th><th>数据来源</th><th>默认频率</th></tr>
+    <tr><td>A1</td><td>Trend × Your Angle</td><td>外部驱动</td><td>Search + Trends API</td><td>~1/天</td></tr>
+    <tr><td>A2</td><td>Competitor Update</td><td>外部驱动</td><td>News + user timeline</td><td>~1-2/周</td></tr>
+    <tr><td>A3</td><td>Reply → Original</td><td>外部驱动</td><td>Engage metrics</td><td>~2-3/周</td></tr>
+    <tr><td>B1</td><td>Idea × Trend</td><td>Backlog 驱动</td><td>ideas.md + trend</td><td>~1-2/周</td></tr>
+    <tr><td>C1</td><td>Learn in Public</td><td>活动驱动</td><td>Chat seed</td><td>按输入</td></tr>
+    <tr><td>C2</td><td>Feedback in Public</td><td>活动驱动</td><td>Chat seed</td><td>按输入</td></tr>
+    <tr><td>C3</td><td>Build in Public</td><td>活动驱动</td><td>Chat seed</td><td>按输入</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <h2>Tag 机制 — 算法放大的关键</h2>
+  <div class="callout">
+    X 算法的一个关键复利机制：<strong>当你和某个大 V 发生实质互动（回复、提及、被引用），算法后续会把你的帖子也推给 TA</strong>。所以 Signal 卡片在建议帖子时，必须包含明确的 tag 建议（谁 + 为什么）—— tag 不是礼貌，是放大路径。
+  </div>
+  <table class="spec-table">
+    <tr><th>场景</th><th>Tag 对象</th><th>为什么</th></tr>
+    <tr><td>学习（C1）</td><td>原作者（podcast host / article author）</td><td>作者转发率 ~30-50%，即使不转发也会看到你</td></tr>
+    <tr><td>反馈（C2）</td><td>产品官方 + founder</td><td>早期产品 founder 几乎一定会回复（~90%）</td></tr>
+    <tr><td>Build（C3）</td><td>模型/API 官方 + DevRel lead</td><td>DevRel 主动在找用户案例，官方转发 = 曝光倍数</td></tr>
+    <tr><td>竞品动态（A2）</td><td>被讨论的公司官方</td><td>公司社媒会跟踪提及，可能 quote 回应</td></tr>
+    <tr><td>趋势帖（A1）</td><td>可选，不强制</td><td>避免过度 tag 显得功利</td></tr>
+  </table>
+
+  <h3>Tag 识别的实现</h3>
+  <ul>
+    <li>建立 <strong>知名账号字典</strong>：lab accounts（@AnthropicAI, @OpenAI, @GoogleAI...）+ 已知 DevRel lead + 知名 podcast host</li>
+    <li>Chat seed 解析时做 <strong>entity extraction</strong>：产品名 → 官方账号；播客名 → 主持人账号</li>
+    <li>置信度分档处理：
+      <ul style="margin-top:4px;">
+        <li><strong>High</strong>（字典命中 / 官号确认）→ 直接填入 tag</li>
+        <li><strong>Medium</strong>（有候选但不唯一）→ 卡片显示 2-3 个候选 @，用户一键选</li>
+        <li><strong>Low</strong>（完全找不到）→ <strong>不生成此 Signal</strong>。宁缺毋滥。可在 Chat 里反问一次用户确认，存入 memory，下次升为 High</li>
+      </ul>
+    </li>
+    <li>Tag 数量限制：<strong>单条帖子 ≤ 3 个 tag</strong>（超过显得垃圾）</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>Create 的关键词局限性是 by design</h2>
+  <p>Category A 的关键词来自 VOICE.md topics + Competitor 列表。这是一个<strong>封闭集</strong>，刻意的。超出认知边界的发现是 <strong>Research 的职责</strong>，不是 Create 的。</p>
+  <p>用户想扩展 Create 的覆盖范围，走 Chat（Category C）或者直接编辑 VOICE.md topics，不需要让 Agent 盲目搜索。<strong>30 秒 Chat seed &gt; 自动扩大搜索 100 倍。</strong></p>
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB: CHAT
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-chat" class="spec-section">
+<div class="prose">
+  <div class="prose-label">Chat — 重新定位</div>
+  <h1>从「指挥 Agent」到「给 Agent 上下文」</h1>
+
+  <p>Chat 在 Cycle 04-05 是主 tab — 用户在这里指挥 Agent 写帖子、调语气、审批内容。在 Signals 模型下，这些场景全部消失了。</p>
+
+  <div class="divider"></div>
+
+  <h2>旧 Chat vs 新 Chat</h2>
+
+  <div class="cmp-row">
+    <div class="cmp-card" style="background:#FEF2F2;border-color:#FECACA;">
+      <div class="cmp-card-label" style="color:#DC2626;">旧 Chat（删除的场景）</div>
+      <p>
+        「帮我写一条关于 distribution 的帖子」<br>
+        「语气再 aggressive 一点」<br>
+        「这条不发了，换一个」<br>
+        Agent 汇报：「已发布，获得 120 likes」
+      </p>
+    </div>
+    <div class="cmp-card teal">
+      <div class="cmp-card-label">新 Chat（保留的场景）</div>
+      <p>
+        「今天和 Left Lane 聊了，他们对 AI agent B2C 很感兴趣」<br>
+        「最近想多关注 fintech × AI 方向」<br>
+        「这周不想发帖，focus on product」<br>
+        → Agent 更新 ideas.md / VOICE.md / scan 参数
+      </p>
+    </div>
+  </div>
+
+  <h2>Chat 的新角色：调参入口</h2>
+
+  <p>Chat 变成给 Agent 上下文的通道。不是让 Agent 执行任务，而是让 Agent 更聪明：</p>
+
+  <table class="spec-table">
+    <tr><th>用户说的话</th><th>Agent 做什么</th><th>影响哪层 Signal</th></tr>
+    <tr><td>「今天花了 3 小时调 MCP server」</td><td>存入 ideas.md，下次趋势匹配时生成 Create Signal</td><td>Create</td></tr>
+    <tr><td>「最近关注 fintech × AI」</td><td>更新 VOICE.md topics + Research 搜索关键词</td><td>Create + Research</td></tr>
+    <tr><td>「这周不想发帖」</td><td>降低 Create Signal 频率，Engage 保留</td><td>Create</td></tr>
+    <tr><td>「@sarahguo 是 Conviction 的，帮我关注她」</td><td>加入 Network 重点跟踪列表</td><td>Network</td></tr>
+    <tr><td>「分享一下我的 agent 可靠性数据」</td><td>存入 ideas.md，标记为高优先级 seed</td><td>Create</td></tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <h2>产品形态变化</h2>
+
+  <h3>方案：Chat 降级为 sidebar 内的独立页面</h3>
+
+  <div class="callout">
+    Chat 从「打开 app 的第一个页面」降级到 sidebar 的第二项。用户日常动线是 <strong>Signals → 行动 → 关掉</strong>，只有当需要给 Agent 新信息时才进 Chat。
+  </div>
+
+  <p>Chat 的 UI 保持不变（对话气泡），但行为逻辑变了：</p>
+
+  <ul>
+    <li><strong>Agent 不主动发消息</strong> — 以前 Agent 会在 Chat 里说「我帮你写了一条帖子」。现在不需要了，所有信号去 Signals 页。</li>
+    <li><strong>Agent 回复以确认为主</strong> — 用户说了一个 idea，Agent 回复「已存入 ideas.md，会在趋势匹配时提醒你」。简短、不啰嗦。</li>
+    <li><strong>Chat 历史成为 Agent 的 memory</strong> — 用户在 Chat 里说的每一句话都是 Agent 的长期上下文，影响后续所有 scan 的判断。</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>Chat Notifications 在 Cycle 06 的变化</h2>
+
+  <p>Cycle 04-05 时代，Chat 是一个既做对话又做通知的地方 —— 草稿就绪、task 发布、digest 摘要都推送到 Chat。随着 <strong>Tasks 删除 + Log 合并到 Signals</strong>，大量旧的 Chat 通知失去了载体。这一节明确回答：<strong>哪些通知还在 Chat，哪些迁移去哪里。</strong></p>
+
+  <h3>旧 Chat 通知的迁移表</h3>
+  <table class="spec-table">
+    <tr><th>旧通知类型（Cycle 04-05）</th><th>来源</th><th>Cycle 06 去处</th></tr>
+    <tr><td>「草稿 X 已就绪，请 review」</td><td>bot_tasks REVIEW_READY</td><td><strong>废弃</strong> — 无 autonomous draft</td></tr>
+    <tr><td>「帖子 X 已发布」</td><td>bot_tasks PUBLISHED</td><td><strong>废弃</strong> — 发布动作在 X 上完成</td></tr>
+    <tr><td>「定时任务已安排」</td><td>task scheduler</td><td><strong>废弃</strong> — 无定时发帖</td></tr>
+    <tr><td>「你有 X 个待处理草稿」</td><td>L6 Pending Drafts rule</td><td><strong>废弃</strong> — 无草稿堆积</td></tr>
+    <tr><td>「Agent 发现新话题可以写」</td><td>trend scan</td><td>→ <strong>Signals 页（Create Signal）</strong> + push notification</td></tr>
+    <tr><td>「有值得回复的对话」</td><td>L10 Engagement Opportunity</td><td>→ <strong>Signals 页（Engage Signal）</strong> + push notification</td></tr>
+    <tr><td>每日/每周 Digest</td><td>Digest task</td><td>→ <strong>Email（L7 改设计）</strong>，内容改成「本周 Signals 摘要」</td></tr>
+    <tr><td>Performance Milestone</td><td>L11</td><td>→ <strong>Email</strong>（非时效，不推 Chat）</td></tr>
+    <tr><td>Onboarding 引导步骤</td><td>L3</td><td>→ <strong>Email</strong> + app 内 banner（不占用 Chat）</td></tr>
+    <tr><td>Interview prompts</td><td>Interview flow</td><td>→ <strong>独立 onboarding 页面</strong>（不进 Chat 流）</td></tr>
+  </table>
+
+  <h3>Chat 保留的通知类型</h3>
+  <p>Chat 在 Cycle 06 变得<strong>安静</strong>。只保留以下 5 类消息。其他一律迁移到 Signals / Email / Stats。</p>
+
+  <h4>1. 用户输入的确认回执</h4>
+  <table class="spec-table">
+    <tr><th>触发</th><th>Agent 回复示例</th></tr>
+    <tr><td>用户给一个 Chat seed</td><td>「已记录。存入 ideas.md，下次趋势匹配会生成 Create Signal。」</td></tr>
+    <tr><td>用户让 Agent 关注某人</td><td>「已把 @sarahguo 加入 Network 重点跟踪。」</td></tr>
+    <tr><td>用户说「这周不想发帖」</td><td>「好，本周降低 Create Signal 频率，Engage 保留。」</td></tr>
+  </table>
+  <p><strong>原则：</strong>简短、明确告诉用户 Agent 做了什么、会影响哪个 Signal 类型。不啰嗦。</p>
+
+  <h4>2. Agent 的 Clarifying Questions（新行为）</h4>
+  <p>当 Chat seed 太模糊，Agent 应该反问而不是硬生成 Signal：</p>
+  <div class="callout">
+    用户：「今天看了一些 AI 新闻」<br>
+    Agent：「能具体说说是哪些？是 model releases、funding news、还是别的？这样我可以更精准地生成 Create Signal。」
+  </div>
+  <p>这是 Cycle 04-05 没有的行为。Agent 以前会硬写一条关于「AI 新闻」的帖子，现在会先问清楚。配合 Anti-Spam 原则。</p>
+
+  <h4>3. 系统配置变更确认</h4>
+  <table class="spec-table">
+    <tr><th>触发</th><th>Agent 回复示例</th></tr>
+    <tr><td>用户在 Settings 修改 VOICE.md topics</td><td>「Topics 更新：加入 fintech × AI。下次 scan 会覆盖这个方向。」</td></tr>
+    <tr><td>用户开启/关闭某 Signal 类型</td><td>「已关闭 Research Signal 推送，Research Briefing 仍会在 Signals 页可见。」</td></tr>
+    <tr><td>用户调整通知偏好</td><td>「Push 通知已关。时效性 Signal 会 fallback 到 email。」</td></tr>
+  </table>
+  <p><strong>为什么在 Chat 不在 toast：</strong>这些确认是 Agent 对用户请求的回应，属于对话上下文的一部分。用户以后 scroll 回去能看到「我什么时候改了什么」。</p>
+
+  <h4>4. 系统错误 / Auth 问题（hard errors）</h4>
+  <p>这些不能用 Signal 卡片表达，因为不是关于 X 内容的信号，是关于系统状态的。</p>
+  <table class="spec-table">
+    <tr><th>错误类型</th><th>Chat 消息示例</th><th>需要用户操作</th></tr>
+    <tr><td>X token 过期</td><td>「你的 X token 过期了。我暂时停止 scan。请在 Settings 重新连接。」</td><td>✓</td></tr>
+    <tr><td>X API rate limit</td><td>「X API 限流中，下次 scan 延迟到 X 分钟后。」</td><td>✗ 仅告知</td></tr>
+    <tr><td>Signal 生成失败</td><td>「过去 6h 没有符合质量标准的 Signal。这是正常的，宁缺毋滥。」</td><td>✗ 仅告知</td></tr>
+  </table>
+
+  <h4>5. Agent Proactive 询问（低频，可选）</h4>
+  <p>Agent 偶尔基于累积数据主动提问，帮用户做配置决策。频率 ≤ 每周 1 次。</p>
+  <div class="callout amber">
+    「我注意到你最近 3 周关于 AI agent reliability 的话题互动特别高。要不要我把这个设为 Research 主题开始追踪？」
+  </div>
+  <ul>
+    <li>触发条件必须明确（有数据支撑，不是凭感觉）</li>
+    <li>永远是「问问题」，不是「通知已做」</li>
+    <li>用户回复「好的」→ Agent 执行 → 回到类别 3 的确认回执</li>
+  </ul>
+
+  <h3>Chat 不应该出现的消息类型</h3>
+  <div class="callout" style="border-left-color:#DC2626;">
+    <strong>明确禁止出现在 Chat 里的内容：</strong>
+    <ul style="margin-top:8px;margin-bottom:0;">
+      <li>❌ Engage/Create/Research/Network Signal 的推送（一律去 Signals 页 + push notification）</li>
+      <li>❌ 「你该发帖了」这类催促</li>
+      <li>❌ 「Agent 今天发现了 5 个机会」这类计数通知（Signals 页 badge 已经表达了）</li>
+      <li>❌ Performance 数字汇报（去 Stats 或 Email）</li>
+      <li>❌ 任何带「草稿」「task」「publish」字样的消息（这些概念已废弃）</li>
+      <li>❌ 市场营销内容（如「试试我们的新功能」— 去 app 内 banner 或 email）</li>
+    </ul>
+  </div>
+
+  <h3>Chat 频率预期</h3>
+  <p>Cycle 06 Chat 的正常使用频率：</p>
+  <ul>
+    <li>活跃用户：每周打开 Chat <strong>2-5 次</strong>，每次给 1-2 个 seed</li>
+    <li>Chat 里 Agent 主动消息 ≤ <strong>1 条/周</strong>（clarifying question 或 proactive 询问）</li>
+    <li>错误消息：仅在实际有 auth / rate limit 问题时出现</li>
+  </ul>
+  <p>如果 Agent 开始在 Chat 里发各种通知，说明<strong>设计出错了</strong> — 应该迁移到 Signals 或 Email。</p>
+
+  <div class="divider"></div>
+
+  <h2>交互流程</h2>
+  <p>完整的 Chat 交互请看 <strong>Interactive Mock</strong> tab — 点击 sidebar 的 Chat 导航。</p>
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB: MONETIZATION
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-monetization" class="spec-section">
+<div class="prose">
+  <div class="prose-label">Cycle 06 — Monetization</div>
+  <h1>Blurred Signals → Unlock → 7-Day Trial</h1>
+
+  <p>Cycle 06 的付费模型和 Signals 产品模型一体设计。核心思路：<strong>Agent 免费做出价值（signals），但价值被"隐约可见"地挡住</strong>。用户主动点击 unlock 才开启 7 天免费试用。</p>
+
+  <div class="divider"></div>
+
+  <h2>核心规则（3 条）</h2>
+
+  <div class="term-grid">
+    <div class="term-key">触发点</div>
+    <div class="term-val"><strong>Onboarding 完成后</strong>。Agent 做一次初始 scan，产出首批 signals 进入 Signals feed。Trial 并不自动启动。</div>
+
+    <div class="term-key">可见性</div>
+    <div class="term-val">Signals feed 完整渲染（卡片数量、类型 badge、时间戳都可见），但<strong>标题 + 内容用 CSS blur 模糊处理</strong>。用户隐约看到"有东西在等我"，但看不清。</div>
+
+    <div class="term-key">解锁</div>
+    <div class="term-val">Feed 中央或顶部显示 "Unlock — 7-day free trial"。点击调用 <code>POST /api/v1/billing/start-trial</code>。Trial 一次性，用户账号生命周期只能开启一次。</div>
+  </div>
+
+  <h2>心理学：为什么模糊而不是遮挡</h2>
+
+  <p>传统 SaaS paywall 是"封锁 → 付费解锁"，给用户的心理感受是<strong>"这个东西我还没拥有"</strong>。Cycle 06 反过来：让用户先看见"Tomo 已经为我做了 X 件事"，再用模糊制造"我差一步就能看清"的张力。</p>
+
+  <p>这是 <strong>loss aversion</strong> 而不是 cost-benefit 计算。关键条件：</p>
+
+  <ul>
+    <li>卡片数量必须真实且可信（5–10 条起）</li>
+    <li>类型 badge、时间戳、发送者头像等外围元数据都不模糊 → 暗示"内容是真的"</li>
+    <li>模糊强度要刚好看不清内容，但能辨认"这里有字"（6px blur 量级）</li>
+    <li>解锁 CTA 的文案是<strong>"Unlock"</strong>，不是"Subscribe"或"Upgrade"</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>四种状态的视觉矩阵</h2>
+
+  <div class="term-grid">
+    <div class="term-key">Pre-trial<br/><span style="font-weight:400;color:var(--text-muted);font-size:12px">onboarded but never clicked unlock</span></div>
+    <div class="term-val">
+      Signals feed: <strong>卡片可见，内容模糊</strong><br/>
+      中央 CTA: "Unlock — 7-day free trial"（UnlockTrialButton, primary variant）<br/>
+      Sidebar: 无 trial banner<br/>
+      Agent 扫描: <strong>停止</strong>（初始 scan 之后不再扫描，靠 email 召回）
+    </div>
+
+    <div class="term-key">Trialing<br/><span style="font-weight:400;color:var(--text-muted);font-size:12px">clicked unlock, inside 7-day window</span></div>
+    <div class="term-val">
+      Signals feed: <strong>完全清晰</strong><br/>
+      Sidebar 底部: "N days left in trial — Upgrade to Pro →"（TrialBanner）<br/>
+      Agent 扫描: 30 分钟一次（全速）
+    </div>
+
+    <div class="term-key">Active<br/><span style="font-weight:400;color:var(--text-muted);font-size:12px">paid subscriber</span></div>
+    <div class="term-val">
+      Signals feed: 完全清晰<br/>
+      Sidebar: 无 banner<br/>
+      Settings &gt; Billing: 显示 "Pro" + Open billing portal<br/>
+      Agent 扫描: 30 分钟一次
+    </div>
+
+    <div class="term-key">Expired<br/><span style="font-weight:400;color:var(--text-muted);font-size:12px">trial ended, no subscription</span></div>
+    <div class="term-val">
+      Signals feed: <strong>重新模糊</strong>（但卡片存量保留，用户看得见数量变化）<br/>
+      中央 CTA: "Subscribe — $69/month"（trial 已用完，没有第二次 unlock）<br/>
+      Agent 扫描: 停止<br/>
+      Email 召回: Day 3 / Day 14 post-expiry
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>定价</h2>
+
+  <div class="term-grid">
+    <div class="term-key">Pro Monthly</div>
+    <div class="term-val"><strong>$69 / month</strong></div>
+
+    <div class="term-key">Pro Annual</div>
+    <div class="term-val"><strong>$660 / year</strong>（$55/月等价，省 20%）</div>
+
+    <div class="term-key">Trial</div>
+    <div class="term-val">7 日历天，全功能。<strong>一次性</strong>，过期后只能付费订阅。</div>
+
+    <div class="term-key">为什么 $69</div>
+    <div class="term-val">X API 扫描成本是最大变量。在 Cycle 6 的 30min scan + 24h dedup + 批处理优化下，每用户月成本 ~$35，毛利 49–64%。alpha 期间观察实际成本；若低于预期，post-alpha 可上调 $89。</div>
+
+    <div class="term-key">Alpha 用户处理</div>
+    <div class="term-val">现有 alpha 用户（0 付费）发放 coupon code，赠送 1 个月 Pro 免费。</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>为什么不持续扫描非付费用户</h2>
+
+  <p>初始 scan 之后 agent 对 non-trialing / non-active 用户完全停止扫描。原因：</p>
+
+  <ul>
+    <li><strong>X API 是最大成本项</strong>（$11–76/user/month）。如果非付费用户也持续扫描，10 个非付费用户 ≈ 1 个付费用户的成本 —— 直接吃掉 margin。</li>
+    <li>Cycle 06 的"模糊"付费转化逻辑只需要初始 scan 产出的 signals 存量即可：<strong>用户看到的是一个快照</strong>，不是流水。</li>
+    <li>刷新 / 召回靠 email，不靠 agent —— <strong>email 成本 &lt; $0.001/封</strong>，数量级差距。</li>
+  </ul>
+
+  <div class="divider"></div>
+
+  <h2>Email 召回路径</h2>
+
+  <p>后端任务 <code>billing_trial_reminder</code>（@hourly cron）处理两条路径的邮件：</p>
+
+  <h3>Path A：Onboarded but never unlocked</h3>
+  <p>锚点 = <code>users.created_at</code>。仅当 <code>trial_started_at IS NULL</code> 时触发。</p>
+  <div class="term-grid">
+    <div class="term-key">Day 3</div><div class="term-val">"Your Tomo signals are ready" — 明确告知"N 条 signal 等你解锁"</div>
+    <div class="term-key">Day 7</div><div class="term-val">"Tomo is on standby" — 轻度提醒，不推销</div>
+    <div class="term-key">Day 30</div><div class="term-val">"One last nudge from Tomo" — 最后一击，之后停止骚扰</div>
+  </div>
+
+  <h3>Path B：Trial unlocked</h3>
+  <p>锚点 = <code>users.trial_started_at</code>。付费用户（subscription active）自动跳过 Day 7+ 的邮件。</p>
+  <div class="term-grid">
+    <div class="term-key">Day 5</div><div class="term-val">"2 days left" — 保持紧迫感</div>
+    <div class="term-key">Day 7</div><div class="term-val">"Your trial ended" — 付费 CTA</div>
+    <div class="term-key">Day 14 post-expiry</div><div class="term-val">Social proof / re-engagement</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>前端组件</h2>
+
+  <div class="term-grid">
+    <div class="term-key"><code>LockedOverlay</code></div>
+    <div class="term-val">通用 wrapper，<code>locked={isLocked}</code> 控制是否对 children 应用 blur + 叠加 CTA。把它套在 SignalsFeed 或 SignalCard 外层。</div>
+
+    <div class="term-key"><code>UnlockTrialButton</code></div>
+    <div class="term-val">独立 CTA 组件。<code>variant="primary"</code> 是带图标和说明的大卡片（中央叠加用）；<code>variant="compact"</code> 是内嵌小按钮。已处理"trial 已用过"的降级情况：点击后跳转 <code>/settings/billing</code>。</div>
+
+    <div class="term-key"><code>TrialBanner</code></div>
+    <div class="term-val">Sidebar 底部。仅 <code>status === 'trialing'</code> 时渲染。点击直接调 Stripe Checkout（绕过 /settings/billing，加速转化）。</div>
+
+    <div class="term-key"><code>useSubscription</code></div>
+    <div class="term-val">Zustand hook。暴露 <code>isLocked</code>（单一真相源）+ <code>startTrial()</code> action + <code>fetchStatus()</code>。在 AppShell 顶层 useEffect 调用一次 fetch。</div>
+
+    <div class="term-key"><code>/settings/billing</code></div>
+    <div class="term-val">Manage 页。active 用户看 "Open billing portal"；pre-trial / expired 用户看 upgrade 两个 CTA（monthly + annual）。</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>API 端点</h2>
+
+  <div class="term-grid">
+    <div class="term-key"><code>GET /api/v1/billing/status</code></div>
+    <div class="term-val">JWT。返回 <code>{status, daysLeft, plan}</code>。status = trialing / active / expired。</div>
+
+    <div class="term-key"><code>POST /api/v1/billing/start-trial</code></div>
+    <div class="term-val">JWT。启动 7 天 trial。如果 <code>trial_started_at</code> 已存在 → 返回 409 TRIAL_ALREADY_USED。成功返回新的 BillingStatus。</div>
+
+    <div class="term-key"><code>POST /api/v1/billing/checkout-session</code></div>
+    <div class="term-val">JWT。入参 <code>{priceId}</code>（必须是 monthlyPriceID 或 annualPriceID 之一，否则 400）。返回 Stripe Checkout URL。</div>
+
+    <div class="term-key"><code>POST /api/v1/billing/portal</code></div>
+    <div class="term-val">JWT。返回 Stripe Customer Portal URL，用户在 Stripe 侧管理订阅 / 取消 / 更新支付方式。</div>
+
+    <div class="term-key"><code>POST /api/v1/stripe/webhook</code></div>
+    <div class="term-val">无 JWT，用 Stripe-Signature 头验签。处理 <code>customer.subscription.created/updated/deleted</code>。</div>
+
+    <div class="term-key"><code>GET /api/v1/agent/:account_id/billing/status</code></div>
+    <div class="term-val">Server-to-server（tomo_agent 调用）。返回 status + <code>scan_interval_seconds</code>。非 trialing / non-active 时 agent 完全不扫描。</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h2>后端不做 402</h2>
+
+  <p>Cycle 06 特意去掉了 <code>RequireActiveSubscription</code> middleware 对 <code>/api/v1/bot/*</code> 的硬拦截。原因：</p>
+
+  <ul>
+    <li>Signals API 返回给前端时<strong>包含真实内容</strong>（前端 blur 只是视觉）。这符合"用户看见价值存在"的心理模型。</li>
+    <li>如果后端硬拦截，前端就拿不到 signals 的数量、类型、时间戳 —— 那就没东西可模糊了。</li>
+    <li>Trade-off：技术级用户可以 F12 打开 DevTools 看到内容。这是有意接受的。对 99% 的用户无影响，对那 1% 技术用户，他们本来就不是 subscription 目标。</li>
+  </ul>
+
+  <p>未来如果需要更严，可以改成：<strong>backend redact signal body</strong>（返回 <code>title: "████ ████"</code>）。但 alpha 不做。</p>
+
+  <div class="divider"></div>
+
+  <h2>代码位置</h2>
+
+  <p>Cycle 06 的付费功能在两个独立 fork 里开发，<strong>先完成前端 + 发布，再回 merge</strong>：</p>
+
+  <div class="term-grid">
+    <div class="term-key">Frontend fork</div>
+    <div class="term-val"><code>parabotweb2/</code> — 独立 git history。完成后 rebase 回 <code>parabotweb/master</code>。</div>
+
+    <div class="term-key">Backend fork</div>
+    <div class="term-val"><code>para-service2/</code> — 独立 git history。完成后 rebase 回 <code>para-service/master</code>。</div>
+
+    <div class="term-key">Stripe 配置</div>
+    <div class="term-val">Tomo Labs sandbox（<code>acct_1TFfdeFFJCMdpwre</code>）。Product <code>prod_UMAKSlPhZ1Hqae</code>、Price IDs 在 <code>reference_stripe.md</code> memory 里。Live mode 上线前需创建 Restricted API Key。</div>
+
+    <div class="term-key">DB migration</div>
+    <div class="term-val"><code>migrations/056_add_billing.up.sql</code> — 给 <code>users</code> 加 <code>stripe_customer_id</code> + <code>trial_started_at</code>；新增 <code>subscriptions</code> 表。</div>
+  </div>
+
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     TAB: INTERACTIVE MOCK
+     ═══════════════════════════════════════════════════════ -->
+<div id="tab-mock" class="spec-section">
+<div class="mock-frame">
+  <div class="mock-container" id="mockApp">
+
+    <!-- Sidebar -->
+    <aside class="m-sidebar">
+      <div class="m-logo">
+        <div class="m-logo-circles"><div class="m-logo-c1"></div><div class="m-logo-c2"></div></div>
+        <span class="m-logo-text">tomo</span>
+      </div>
+      <nav class="m-nav">
+        <button class="m-nav-item active" data-page="signals">
+          <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l2.5 2.5"/></svg>
+          Signals
+          <span class="m-nav-badge" id="signalsBadge">7</span>
+        </button>
+        <button class="m-nav-item" data-page="chat">
+          <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 10h14M3 5h14M3 15h14"/></svg>
+          Chat
+        </button>
+        <button class="m-nav-item" data-page="stats">
+          <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h12v12H4z"/><path d="M4 8h12M8 8v8"/></svg>
+          Stats
+        </button>
+        <button class="m-nav-item" data-page="settings">
+          <svg class="icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="3"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2"/></svg>
+          Settings
+        </button>
+      </nav>
+      <div class="m-account">
+        <div class="m-avatar">E</div>
+        <div><div class="m-account-name">Eric Tao</div><div class="m-account-handle">@erictao</div></div>
+      </div>
+    </aside>
+
+    <!-- ═══ Signals Page ═══ -->
+    <div class="m-page active" id="page-signals">
+      <div class="m-main">
+        <div class="m-header">
+          <div class="m-header-row">
+            <h1 class="m-page-title">Signals</h1>
+            <span class="m-header-meta">scanned 8m ago</span>
+          </div>
+          <div class="m-filters" id="filterBar">
+            <button class="m-filter active" data-filter="all">All <span class="cnt">7</span></button>
+            <button class="m-filter" data-filter="engage">Engage <span class="cnt">4</span></button>
+            <button class="m-filter" data-filter="create">Create <span class="cnt">2</span></button>
+            <button class="m-filter" data-filter="research">Research</button>
+          </div>
+        </div>
+        <!-- Onboarding paused banner — sticky, shows above feed when interview is in progress -->
+        <div class="iv-banner-compact" onclick="document.querySelector('.m-nav-item[data-page=chat]').click()" title="点击进入 Chat 继续">
+          <div class="iv-bc-icon">
+            <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10 2a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM4 10a6 6 0 0 0 12 0M10 16v3"/></svg>
+          </div>
+          <div class="iv-bc-body">
+            <div class="iv-bc-title">Onboarding paused — Q2 of 6</div>
+            <div class="iv-bc-sub">完成后 Signals 精准度会显著提升</div>
+          </div>
+          <div class="iv-bc-dots">
+            <div class="iv-bc-dot done"></div>
+            <div class="iv-bc-dot done"></div>
+            <div class="iv-bc-dot"></div>
+            <div class="iv-bc-dot"></div>
+            <div class="iv-bc-dot"></div>
+            <div class="iv-bc-dot"></div>
+          </div>
+          <button class="iv-bc-cta" onclick="event.stopPropagation();document.querySelector('.m-nav-item[data-page=chat]').click()">Continue →</button>
+        </div>
+
+        <div class="m-feed" id="feedArea">
+          <!-- Scan summary -->
+          <div class="m-scan">
+            <div class="m-scan-icon"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="10" r="8"/><path d="M10 6v4l2.5 2.5"/></svg></div>
+            扫描了你最近 <strong>&nbsp;12 条帖子&nbsp;</strong> 的回复 + <strong>&nbsp;340 条领域帖子&nbsp;</strong>，筛出 <strong>&nbsp;7 个 Signal</strong>
+          </div>
+
+          <!-- ═══ Engage A signals ═══ -->
+          <div class="m-group" data-type="engage">
+            <div class="m-section-label urgent">Inbox &middot; worth replying</div>
+
+            <div class="sig engage-a" data-detail="engage-a-1">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-ea">Engage</span><span class="badge b-chip">3 new replies</span></div>
+                <span class="sig-time hot">2h ago</span>
+              </div>
+              <div class="tweet">
+                <div class="tweet-head"><div class="tweet-av me"></div><span class="tweet-name">Eric Tao</span><span class="tweet-handle">@erictao · 6h</span></div>
+                <div class="tweet-text">Building got democratized. Distribution didn't. Every new tool makes building easier, but the bottleneck just moved — and most founders don't see it until month 6.</div>
+                <div class="tweet-stats"><span>42 replies</span><span>18 RT</span><span>340 likes</span><span>28k views</span></div>
+              </div>
+              <div class="sig-why"><strong>Why：</strong>3 条新回复值得关注 — 其中 @jasoncalacanis（你的 follower，48k 粉丝）发了一条实质性反驳。</div>
+              <div class="sig-angle"><span class="angle-label">Angle</span>每条 reply 有独立角度 —— 打开详情选一条看 Tomo 的建议切入点</div>
+              <div class="sig-footer"><span>你 6 小时前发的帖子</span><span class="metrics">3 条需要回复</span></div>
+            </div>
+
+            <div class="sig engage-a" data-detail="engage-a-2">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-ea">Engage</span></div>
+                <span class="sig-time hot">45m ago</span>
+              </div>
+              <div class="sig-title">@lennysan 引用了你的帖子并补充了产品数据</div>
+              <div class="tweet">
+                <div class="tweet-head"><div class="tweet-av me"></div><span class="tweet-name">Eric Tao</span><span class="tweet-handle">@erictao · 8h</span></div>
+                <div class="tweet-text">Founders underestimate how brutal year 2 is. The hard part isn't getting the first paying customer — it's keeping them.</div>
+              </div>
+              <div class="tweet quote-of">
+                <div class="tweet-head"><div class="tweet-av"></div><span class="tweet-name">Lenny</span><span class="tweet-handle">@lennysan · 45m</span></div>
+                <div class="tweet-text">This 100%. We ran the numbers — average time to first paying customer dropped 60% in 2 years, but CAC went up 40%.</div>
+              </div>
+              <div class="sig-why"><strong>Why：</strong>Lenny（590k 粉丝）引用你并带了具体数据。回复可以进一步建立关系。</div>
+              <div class="sig-angle"><span class="angle-label">Angle</span>认可他的数据 + 补充 Tomo 作为 distribution-as-a-service 的角度，轻收尾</div>
+              <div class="sig-footer"><span class="src">@lennysan</span><span class="metrics">他的引用已有 89 replies</span></div>
+            </div>
+          </div>
+
+          <!-- ═══ Engage B signals ═══ -->
+          <div class="m-group" data-type="engage">
+            <div class="m-section-label">Discover &middot; worth joining</div>
+
+            <div class="sig engage-b" data-detail="engage-b-1">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-eb">Engage</span><span class="badge b-chip">trending fast</span></div>
+                <span class="sig-time hot">~2h window</span>
+              </div>
+              <div class="sig-title">「AI agent 是不是又一个 chatbot 泡沫」正在爆发</div>
+              <div class="sig-body">@benedictevans 发起，VC + 创始人两派在争论。帖子还在上升期。</div>
+              <div class="sig-why"><strong>Why：</strong>你在做 AI agent 产品，有第一手经验。大部分回复是 VC 在推测。</div>
+              <div class="sig-angle"><span class="angle-label">Angle</span>以"我每天用 agent"的第一手数据切入，给 deterministic vs open-ended 各一个百分比</div>
+              <div class="sig-footer"><span class="src">@benedictevans · 3h 前</span><span class="metrics">240 replies · 92k views</span></div>
+            </div>
+
+            <div class="sig engage-b" data-detail="engage-b-2">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-eb">Engage</span><span class="badge b-chip">you were mentioned</span></div>
+                <span class="sig-time">5h ago</span>
+              </div>
+              <div class="sig-title">有人在 AI 社交工具讨论帖中提到了 Tomo</div>
+              <div class="sig-body">"有没有人试过 @erictao 做的 Tomo？看起来是 agent 帮你做 X distribution 的思路"</div>
+              <div class="sig-why"><strong>Why：</strong>潜在用户在主动了解你的产品。回复可以直接转化。</div>
+              <div class="sig-angle"><span class="angle-label">Angle</span>本人回复澄清产品定位（不是自动发帖，是 signal scout）+ 开放演示邀请</div>
+              <div class="sig-footer"><span class="src">@buildwithai</span><span class="metrics">12 replies · 3.2k views</span></div>
+            </div>
+          </div>
+
+          <!-- ═══ Create signals ═══ -->
+          <div class="m-group" data-type="create">
+            <div class="m-section-label urgent">Create &middot; best to post today</div>
+
+            <div class="sig create" data-detail="create-1">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-c-trend">Create</span><span class="badge b-chip">trending fast</span></div>
+                <span class="sig-time hot">~6h window</span>
+              </div>
+              <div class="sig-title">Claude 5 今早发布定价 — 你跑 Tomo 的真实成本数据比推测更有穿透力</div>
+              <div class="sig-ref">
+                <span class="sig-ref-type">Tweet</span>
+                <div class="sig-ref-body"><span class="ref-author">@ttunguz</span><span class="ref-snippet">"With Claude 5 pricing, what does an AI-first startup's cost structure actually look like? Is 70% gross margin achievable?"</span></div>
+              </div>
+              <div class="sig-angle"><span class="angle-label">Angle</span>以 Tomo 实际 API 支出拆 margin 公式，反驳 70% 假设</div>
+              <div class="sig-footer"><span>趋势扫描 × VOICE.md「AI 成本」</span><span class="metrics">12 相关帖 / 250k+ views</span></div>
+            </div>
+
+            <div class="sig create" data-detail="create-2">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-c-trend">Create</span></div>
+                <span class="sig-time hot">reply trending</span>
+              </div>
+              <div class="sig-title">你昨天 agent reliability 的回复破 340 likes — 趁热度展开成 thread</div>
+              <div class="sig-ref">
+                <span class="sig-ref-type">Idea</span>
+                <div class="sig-ref-body"><span class="ref-snippet">你昨天在 @benedictevans 帖子下的回复："Deterministic tasks: 95%+ reliable. Open-ended: ~60%. Fix isn't better AI — it's better human-agent workflows."</span></div>
+              </div>
+              <div class="sig-angle"><span class="angle-label">Angle</span>按 deterministic vs open-ended 拆 reliability，给出 80/20 分工结论</div>
+              <div class="sig-footer"><span>Engage 回复表现 → Idea 放大</span><span class="metrics">340 likes / 28k views</span></div>
+            </div>
+          </div>
+
+          <!-- ═══ Research placeholder — Cycle 6 暂缓 ═══ -->
+          <div class="m-group" data-type="research">
+            <div class="m-section-label">Research<span class="sig-suspended">Cycle 6 暂缓</span></div>
+            <div class="sig" style="border:1.5px dashed var(--n-300);background:var(--n-50);cursor:default;opacity:0.55;">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-research">Research</span></div>
+                <span class="sig-time" style="color:var(--n-400);">—</span>
+              </div>
+              <div class="sig-title" style="color:var(--n-600);">Research Briefing — 本 cycle 不交付</div>
+              <div class="sig-body">4/20 sync 决策：Research 暂缓，Cycle 6 聚焦 Engage（Inbound + Outbound）+ Create。UI 保留占位，后端不实现。</div>
+            </div>
+          </div>
+
+          <!-- ═══ Acted ═══ -->
+          <div class="m-group" data-type="engage">
+            <div class="m-section-label">Acted</div>
+            <div class="sig acted">
+              <div class="sig-top">
+                <div class="sig-badges"><span class="badge b-type-ea">Engage</span></div>
+                <span class="sig-acted"><svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="4 10 8 14 16 6"/></svg> replied &times;2</span>
+              </div>
+              <div class="sig-title">Agent reliability 讨论 — 你的回复获得 340 likes</div>
+              <div class="sig-footer"><span>昨天</span><span class="metrics">340 likes · 28k views</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detail Panel -->
+      <div class="m-detail" id="detailPanel">
+        <div class="m-detail-header">
+          <div class="m-detail-header-left" id="detailHeaderBadges"></div>
+          <button class="m-close" onclick="closeDetail()">&times;</button>
+        </div>
+        <div class="m-detail-body" id="detailBody"></div>
+        <div class="m-detail-footer" id="detailFooter"></div>
+      </div>
+    </div>
+
+    <!-- ═══ Chat Page ═══ -->
+    <div class="m-page" id="page-chat">
+      <div class="m-header" style="border-bottom:1px solid var(--n-200);">
+        <div class="m-header-row" style="margin-bottom:0;"><h1 class="m-page-title">Chat</h1><span class="m-header-meta">agent 对话主场</span></div>
+      </div>
+      <div class="m-chat-area">
+
+        <!-- Interview Mode Banner (hidden by default, revealed when interview active) -->
+        <div class="iv-banner" id="ivBanner" style="display:none;">
+          <div class="iv-banner-icon">
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3zM4 9v1a6 6 0 0 0 12 0V9M10 16v2"/></svg>
+          </div>
+          <div class="iv-banner-body">
+            <div class="iv-banner-title">Interview · Distribution</div>
+            <div class="iv-banner-sub">Question 3 of 6 · ~3 min left</div>
+          </div>
+          <div class="iv-progress">
+            <div class="iv-dot done"></div>
+            <div class="iv-dot done"></div>
+            <div class="iv-dot current"></div>
+            <div class="iv-dot"></div>
+            <div class="iv-dot"></div>
+            <div class="iv-dot"></div>
+          </div>
+          <div class="iv-banner-actions">
+            <button class="iv-pill-btn" onclick="toggleInterview()">Pause</button>
+            <button class="iv-pill-btn" onclick="toggleInterview()">Exit</button>
+          </div>
+        </div>
+
+        <div class="m-chat-msgs" id="chatMsgs">
+          <!-- ═══ Section 1: Normal Chat — user seed + agent confirmation ═══ -->
+          <div style="text-align:center;font-size:10.5px;color:var(--n-400);letter-spacing:0.08em;text-transform:uppercase;margin:8px 0 16px;">Yesterday · Free Chat</div>
+
+          <div class="m-chat-msg user">
+            <div class="m-chat-av">E</div>
+            <div class="m-chat-bubble">今天和 Left Lane Capital 聊了，他们对 AI agent B2C 市场很感兴趣，尤其是 social media 方向。</div>
+          </div>
+          <div class="m-chat-msg agent">
+            <div class="m-chat-av">T</div>
+            <div class="m-chat-bubble">已记录。会做两件事：<br>&middot; ideas.md 里存入「AI agent B2C × VC interest」<br>&middot; Research scan 开始追踪 Left Lane 在 AI social 方向的动态</div>
+          </div>
+
+          <!-- ═══ Section 2: Agent push — scan summary ═══ -->
+          <div style="text-align:center;font-size:10.5px;color:var(--n-400);letter-spacing:0.08em;text-transform:uppercase;margin:20px 0 16px;">Today · 08:12 · Scan Complete</div>
+
+          <div class="m-chat-msg agent">
+            <div class="m-chat-av">T</div>
+            <div class="m-chat-bubble">
+              刚完成一次 scan。找到 <strong>3 个新 Signal</strong>：
+              <div class="m-chat-scan">
+                <ul class="m-chat-scan-list">
+                  <li><strong>Engage &middot; Inbox</strong> &mdash; @jasoncalacanis 在你 distribution 帖下发了实质反驳</li>
+                  <li><strong>Engage &middot; Discover</strong> &mdash; 「AI agent 是新 chatbot」讨论爆发，~2h 窗口</li>
+                  <li><strong>Create &middot; Trend</strong> &mdash; Claude 5 定价 AI 成本话题你有第一手数据</li>
+                </ul>
+              </div>
+              <span class="m-chat-cta" onclick="document.querySelector('.m-nav-item[data-page=signals]').click()">打开 Signals 查看 &rarr;</span>
+            </div>
+          </div>
+
+          <!-- ═══ Section 3: Agent clarifying question ═══ -->
+          <div class="m-chat-msg user">
+            <div class="m-chat-av">E</div>
+            <div class="m-chat-bubble">今天看了一些 AI 新闻</div>
+          </div>
+          <div class="m-chat-msg agent">
+            <div class="m-chat-av">T</div>
+            <div class="m-chat-bubble">能具体说说是哪些？是 model releases（Claude 5 / GPT-X）、funding news、还是 agent 赛道动态？这样我能更精准地生成 Create Signal。</div>
+          </div>
+
+          <!-- ═══ Section 4: Agent detects drift → interview invitation ═══ -->
+          <div style="text-align:center;font-size:10.5px;color:var(--n-400);letter-spacing:0.08em;text-transform:uppercase;margin:20px 0 16px;">Today · 10:34 · Voice Drift Detected</div>
+
+          <div class="m-chat-msg agent">
+            <div class="m-chat-av">T</div>
+            <div class="m-chat-bubble">
+              我注意到你过去 2 周在 Chat 里提了 <strong>4 次 distribution</strong>，但 VOICE.md 的 topics 里只有「AI builder」。我对你在这方向的角度还不够清楚，这让我推荐 Signal 时经常 miss。
+              <div class="iv-invite">
+                <div class="iv-invite-title">
+                  <svg width="12" height="12" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/></svg>
+                  Interview 邀请
+                </div>
+                <div class="iv-invite-body">花 5 分钟聊一下你对 distribution 的真实角度？结束后我会更新 VOICE.md 和 ideas.md。</div>
+                <div class="iv-invite-actions">
+                  <button class="iv-invite-primary" onclick="toggleInterview()">好，开始</button>
+                  <button class="iv-invite-secondary">以后再说</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ Section 5: Interview mode (demo — hidden banner above would appear) ═══ -->
+          <div style="text-align:center;font-size:10.5px;color:var(--purple-500);letter-spacing:0.08em;text-transform:uppercase;margin:20px 0 16px;font-weight:600;">&#9679; Interview Mode &middot; Question 3</div>
+
+          <div class="m-chat-msg user">
+            <div class="m-chat-av">E</div>
+            <div class="m-chat-bubble">Consistency 最难。我经常有好的 insight 但当时在 ship 产品，过了那个劲就不发了。</div>
+          </div>
+
+          <div class="m-chat-msg agent">
+            <div class="m-chat-av">T</div>
+            <div class="m-chat-bubble">
+              这正是 builder 的典型 pattern。下一个问题：
+              <div class="iv-question">
+                <div class="iv-q-label">Question 3 of 6</div>
+                <div class="iv-q-text">当你谈 distribution consistency 时，你的受众主要是谁？</div>
+                <div class="iv-choices">
+                  <button class="iv-choice">A. 和你一样苦于 distribution 的 founder</button>
+                  <button class="iv-choice picked">B. 潜在的产品用户（builder 客群）</button>
+                  <button class="iv-choice">C. 投资人 / 行业观察者</button>
+                  <button class="iv-choice-other">自己打一段 &rarr;</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ═══ Section 6: Interview completion summary ═══ -->
+          <div style="text-align:center;font-size:10.5px;color:var(--n-400);letter-spacing:0.08em;text-transform:uppercase;margin:20px 0 16px;">Interview Completed &middot; 4 min</div>
+
+          <div class="m-chat-msg agent">
+            <div class="m-chat-av">T</div>
+            <div class="m-chat-bubble">
+              <span class="iv-complete-tag">
+                <svg width="10" height="10" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="3"><polyline points="4 10 8 14 16 6"/></svg>
+                Interview Done
+              </span>
+              <div style="margin-bottom:8px;">基于你的回答，我更新了：</div>
+              <div class="iv-summary">
+                <div class="iv-summary-title">VOICE.md &middot; 新增字段</div>
+                <ul class="iv-summary-list">
+                  <li>Topics: 新增 <strong>"Distribution consistency"</strong></li>
+                  <li>Voice angle: "builder 视角下的 consistency as infrastructure"</li>
+                  <li>Audience 细化：primary = 苦于 distribution 的 builder founder</li>
+                  <li>ideas.md 追加 <strong>3 条</strong> distribution 相关 seed</li>
+                </ul>
+              </div>
+              <div style="margin-top:10px;font-size:12px;color:var(--n-600);">接下来的 scan 会反映这些新方向。预计 1 小时内会看到相关 Signal。</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="m-chat-input">
+          <input class="m-chat-field" id="chatInput" placeholder="给 Tomo 一个 hint..." onkeydown="if(event.key==='Enter')sendChat()">
+          <button class="m-chat-send" onclick="sendChat()"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 10l12-6-4 6 4 6z"/></svg></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ Placeholder pages ═══ -->
+    <div class="m-page" id="page-stats" style="align-items:center;justify-content:center;">
+      <div style="text-align:center;color:var(--n-400);"><div style="font-size:32px;margin-bottom:8px;">Stats</div><div style="font-size:14px;">帖子表现数据 — Cycle 06 待设计</div></div>
+    </div>
+    <div class="m-page" id="page-settings" style="align-items:center;justify-content:center;">
+      <div style="text-align:center;color:var(--n-400);"><div style="font-size:32px;margin-bottom:8px;">Settings</div><div style="font-size:14px;">VOICE.md topics · 通知偏好 · Research 主题</div></div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════ -->
+<script>
+// ── Tab switching ──
+function showTab(id) {
+  document.querySelectorAll('.top-tab').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.querySelectorAll('.spec-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  window.scrollTo({top: 0, behavior: 'instant'});
+}
+
+// ── Mock: sidebar nav ──
+document.querySelectorAll('.m-nav-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.m-nav-item').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.m-page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+    closeDetail();
+  });
+});
+
+// ── Mock: filter tabs ──
+document.getElementById('filterBar').addEventListener('click', e => {
+  const btn = e.target.closest('.m-filter');
+  if (!btn) return;
+  document.querySelectorAll('.m-filter').forEach(f => f.classList.remove('active'));
+  btn.classList.add('active');
+  const filter = btn.dataset.filter;
+  document.querySelectorAll('.m-group').forEach(g => {
+    if (filter === 'all') { g.style.display = ''; return; }
+    g.style.display = g.dataset.type === filter ? '' : 'none';
+  });
+});
+
+// ── Mock: detail panel ──
+const detailData = {
+  'engage-a-1': {
+    badges: '<span class="badge b-type-ea">Engage</span><span style="font-size:11px;color:var(--n-500);font-weight:500;margin-left:4px;letter-spacing:0.04em;text-transform:uppercase;">INBOUND</span><span style="font-size:12px;color:var(--n-600);font-weight:600;margin-left:8px;">3 worth replying</span>',
+    body: `
+      <div class="m-detail-section">
+        <div class="m-detail-label">Reference — 你的原帖 <span style="font-family:var(--font-en);font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--teal-600);background:var(--teal-50);padding:2px 6px;border-radius:4px;margin-left:6px;">ORIGINAL + 3 REPLIES</span></div>
+        <div class="tweet"><div class="tweet-head"><div class="tweet-av me"></div><span class="tweet-name">Eric Tao</span><span class="tweet-handle">@erictao · 6h</span></div><div class="tweet-text">Building got democratized. Distribution didn't. Every new tool makes building easier, but the bottleneck just moved — and most founders don't see it until month 6.</div><div class="tweet-stats"><span>42 replies</span><span>18 RT</span><span>340 likes</span></div></div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Why — 为什么值得回</div>
+        <div style="font-size:13px;color:var(--n-800);line-height:1.6;padding:4px 0 4px;">3 条 reply 通过 Tomo 质量筛选（42 条原始回复中）—— 其中 @jasoncalacanis 是你的 follower 且发了实质反驳；Sarah Chen 是 VC，补了数据；Dev Builder 直接表达合作意向。每条 Angle 不同，选一条进入回复流程。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">选择回复对象 — 每条有独立 Angle + 可异步生成回复</div>
+        <div style="font-size:11.5px;color:var(--n-500);margin-bottom:8px;">每个回复者的 profile / 近期发帖已被 Tomo 读取（Inbound 特有），Angle 基于此生成。</div>
+        <div style="padding:0 0 4px;">
+
+          <!-- Reply 1: Jason Calacanis — selectable -->
+          <div class="reply-item selectable" onclick="selectReply(this,'jason')" id="reply-jason">
+            <div class="reply-radio"></div>
+            <div class="reply-av" style="background:var(--teal-200)"></div>
+            <div class="reply-content">
+              <div class="reply-head"><span class="reply-name">Jason Calacanis</span><span class="reply-handle">@jasoncalacanis</span><span class="reply-tag">你的 Follower</span><span class="reply-time">2h</span></div>
+              <div class="reply-text">Disagree. Distribution is also getting democratized — look at what short-form video did for creators. The real bottleneck is taste, not reach.</div>
+              <div class="reply-tomo-reason">↑ 48k 粉丝，实质性反驳能引发讨论 · 近期发帖围绕 creator economy</div>
+              <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 10px;font-size:12.5px;color:var(--n-800);line-height:1.5;margin-top:8px;background:var(--teal-50);border-radius:0 4px 4px 0;"><span style="font-family:var(--font-en);font-size:9.5px;font-weight:700;letter-spacing:0.08em;color:var(--teal-600);margin-right:6px;">ANGLE</span>区分 reach 和 distribution（他混了）—— 举 Monkey 30M 用户 vs B2B 例子，承认 taste 但指出不够</div>
+              <div class="reply-ask-inline" id="ask-jason" style="margin-top:10px;display:none;">
+                <div class="gen-zone" id="genZone-engage-a-1-jason">
+                  <button class="gen-btn" onclick="event.stopPropagation();triggerGenEngage('engage-a-1-jason','jason')">
+                    <span class="sparkle">✨</span>让 Tomo 写回复
+                  </button>
+                  <div style="font-size:11px;color:var(--n-500);margin-top:8px;">基于 @jasoncalacanis profile + 原帖 + Angle + VOICE.md</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reply 2: Sarah Chen — selectable -->
+          <div class="reply-item selectable" onclick="selectReply(this,'sarah')" id="reply-sarah">
+            <div class="reply-radio"></div>
+            <div class="reply-av"></div>
+            <div class="reply-content">
+              <div class="reply-head"><span class="reply-name">Sarah Chen</span><span class="reply-handle">@sarahchen_vc</span><span class="reply-time">3h</span></div>
+              <div class="reply-text">Month 6 is generous. Most founders I talk to hit the distribution wall at week 2 post-launch.</div>
+              <div class="reply-tomo-reason">↑ VC 视角 + 数据，回复可建立投资人关系 · profile: early-stage SaaS VC</div>
+              <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 10px;font-size:12.5px;color:var(--n-800);line-height:1.5;margin-top:8px;background:var(--teal-50);border-radius:0 4px 4px 0;"><span style="font-family:var(--font-en);font-size:9.5px;font-weight:700;letter-spacing:0.08em;color:var(--teal-600);margin-right:6px;">ANGLE</span>承认 week 2 数据 —— 指出 launch energy vs repeatable engine 的差异，给她作为 VC 的可用判断框架</div>
+              <div class="reply-ask-inline" id="ask-sarah" style="margin-top:10px;display:none;">
+                <div class="gen-zone" id="genZone-engage-a-1-sarah">
+                  <button class="gen-btn" onclick="event.stopPropagation();triggerGenEngage('engage-a-1-sarah','sarah')">
+                    <span class="sparkle">✨</span>让 Tomo 写回复
+                  </button>
+                  <div style="font-size:11px;color:var(--n-500);margin-top:8px;">基于 @sarahchen_vc profile + 原帖 + Angle + VOICE.md</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Reply 3: Dev Builder — selectable -->
+          <div class="reply-item selectable" onclick="selectReply(this,'dev')" id="reply-dev">
+            <div class="reply-radio"></div>
+            <div class="reply-av"></div>
+            <div class="reply-content">
+              <div class="reply-head"><span class="reply-name">Dev Builder</span><span class="reply-handle">@devbuilder_ai</span><span class="reply-tag">你的 Follower</span><span class="reply-time">4h</span></div>
+              <div class="reply-text">This is exactly why I'm building an AI distribution tool. Would love to chat @erictao</div>
+              <div class="reply-tomo-reason">↑ Builder，与 Tomo 方向高度相关 · profile: 前 Amazon，做 AI SaaS 6 个月</div>
+              <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 10px;font-size:12.5px;color:var(--n-800);line-height:1.5;margin-top:8px;background:var(--teal-50);border-radius:0 4px 4px 0;"><span style="font-family:var(--font-en);font-size:9.5px;font-weight:700;letter-spacing:0.08em;color:var(--teal-600);margin-right:6px;">ANGLE</span>短回复 —— 开放 DM，不在公开对话里展开 product talk</div>
+              <div class="reply-ask-inline" id="ask-dev" style="margin-top:10px;display:none;">
+                <div class="gen-zone" id="genZone-engage-a-1-dev">
+                  <button class="gen-btn" onclick="event.stopPropagation();triggerGenEngage('engage-a-1-dev','dev')">
+                    <span class="sparkle">✨</span>让 Tomo 写回复
+                  </button>
+                  <div style="font-size:11px;color:var(--n-500);margin-top:8px;">基于 @devbuilder_ai profile + 原帖 + Angle + VOICE.md</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>`,
+    footer: '<button class="btn btn-lg btn-ghost">跳过</button><span class="spacer"></span><button class="btn btn-lg btn-teal" id="replyBtn-engage-a-1" disabled style="opacity:0.4;cursor:not-allowed;" title="先选择一条回复">在 X 上回复 ↗</button>'
+  },
+  'engage-a-2': {
+    badges: '<span class="badge b-type-ea">Engage</span><span style="font-size:11px;color:var(--n-500);font-weight:500;margin-left:4px;letter-spacing:0.04em;text-transform:uppercase;">INBOUND</span>',
+    body: `
+      <div class="m-detail-section">
+        <div class="m-detail-label">Reference — 你的原帖 + Lenny 的引用 <span style="font-family:var(--font-en);font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--teal-600);background:var(--teal-50);padding:2px 6px;border-radius:4px;margin-left:6px;">QUOTE</span></div>
+        <div class="tweet"><div class="tweet-head"><div class="tweet-av me"></div><span class="tweet-name">Eric Tao</span><span class="tweet-handle">@erictao · 8h</span></div><div class="tweet-text">Founders underestimate how brutal year 2 is. The hard part isn't getting the first paying customer — it's keeping them.</div></div>
+        <div class="tweet" style="margin-top:8px;"><div class="tweet-head"><div class="tweet-av"></div><span class="tweet-name">Lenny Rachitsky</span><span class="tweet-handle">@lennysan · 45m</span></div><div class="tweet-text">This 100%. We ran the numbers at our portfolio — average time to first paying customer dropped 60% in 2 years, but CAC went up 40%. The distribution tax is real.</div><div class="tweet-stats"><span>89 replies</span><span>34 RT</span><span>890 likes</span></div></div>
+        <div style="font-size:11.5px;color:var(--n-500);margin-top:6px;">Tomo 已读 @lennysan profile（590k followers, Lenny's Newsletter 作者，近期聚焦 growth）</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Why — 为什么值得回</div>
+        <div style="font-size:13px;color:var(--n-800);line-height:1.6;padding:4px 0;">Lenny（590k 粉丝，growth 圈最有声量之一）引用了你的帖子并补了数据。这是进一步建立关系的高价值窗口 —— 回复可见度高，且他大概率会再互动。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Angle — 建议回复角度</div>
+        <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 12px;font-size:13px;color:var(--n-800);line-height:1.6;">承认他的 40% CAC 数据，然后把对话接到 Tomo 正在做的事（AI agent 压缩 distribution tax）—— 让 Lenny 看到有相关项目而不是只吐槽现象。末尾自嘲轻收尾（建 distribution tool 的还需要 distribution），符合 VOICE.md 的幽默 beat。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">让 Tomo 写回复</div>
+        <div class="gen-zone" id="genZone-engage-a-2">
+          <button class="gen-btn" onclick="triggerGenEngage('engage-a-2','lennysan')">
+            <span class="sparkle">✨</span>让 Tomo 写
+          </button>
+          <div style="font-size:11px;color:var(--n-500);margin-top:10px;">基于 @lennysan profile + 原帖 + Angle + VOICE.md</div>
+        </div>
+      </div>`,
+    footer: '<button class="btn btn-lg btn-ghost">跳过</button><span class="spacer"></span><button class="btn btn-lg btn-teal" id="postBtn-engage-a-2" disabled style="opacity:0.4;cursor:not-allowed;">在 X 上回复 ↗</button>'
+  },
+  'engage-b-1': {
+    badges: '<span class="badge b-type-eb">Engage</span><span style="font-size:11px;color:var(--n-500);font-weight:500;margin-left:4px;letter-spacing:0.04em;text-transform:uppercase;">OUTBOUND</span><span class="badge b-chip" style="font-size:11px;padding:4px 10px;margin-left:8px;">trending fast</span>',
+    body: `
+      <div class="m-detail-section">
+        <div class="m-detail-label">Reference — 外部原帖 <span style="font-family:var(--font-en);font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--peach-500);background:var(--peach-50);padding:2px 6px;border-radius:4px;margin-left:6px;">EXTERNAL</span></div>
+        <div class="tweet"><div class="tweet-head"><div class="tweet-av"></div><span class="tweet-name">Benedict Evans</span><span class="tweet-handle">@benedictevans · 3h</span></div><div class="tweet-text">Hot take: AI agents are the new chatbots. Remember when every company needed a chatbot? Same energy. Agents work great for deterministic tasks but break on anything open-ended. Prove me wrong.</div><div class="tweet-stats"><span>240 replies</span><span>56 RT</span><span>1.2k likes</span><span>92k views</span></div></div>
+        <div style="font-size:11.5px;color:var(--n-500);margin-top:6px;">Agent 搜索策略命中："AI agent" + "chatbot" + 情绪对立 + 高 velocity。Outbound 不预读作者 profile（Inbound 才需要）。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Why — 为什么加入</div>
+        <div style="font-size:13px;color:var(--n-800);line-height:1.6;padding:4px 0;">讨论格局：70% VC 在辩论市场规模（缺实操）、20% agent 创始人防御性 defend、10% 技术人员讨论可靠性。<strong>你的空白：几乎没有人从"我每天在用 agent，这是真实数据"的角度说话。</strong>2h 窗口内插入第一手数据的传播倍率最高。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Angle — 建议切入角度</div>
+        <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 12px;font-size:13px;color:var(--n-800);line-height:1.6;">不反对原帖的观点，而是用<strong>具体百分比数据</strong>把 deterministic vs open-ended 的差异量化。结尾重定义："agents fail on autonomy, not understanding —— fix 不是更好的 AI，是更好的人机工作流"，把 chatbot 类比反过来用。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">让 Tomo 写回复</div>
+        <div class="gen-zone" id="genZone-engage-b-1">
+          <button class="gen-btn" onclick="triggerGenEngage('engage-b-1','benedictevans')">
+            <span class="sparkle">✨</span>让 Tomo 写
+          </button>
+          <div style="font-size:11px;color:var(--n-500);margin-top:10px;">基于原帖讨论格局 + Angle + VOICE.md</div>
+        </div>
+      </div>`,
+    footer: '<button class="btn btn-lg btn-ghost">跳过</button><span class="spacer"></span><button class="btn btn-lg btn-teal" id="postBtn-engage-b-1" disabled style="opacity:0.4;cursor:not-allowed;">在 X 上回复 ↗</button>'
+  },
+  'engage-b-2': {
+    badges: '<span class="badge b-type-eb">Engage</span><span style="font-size:11px;color:var(--n-500);font-weight:500;margin-left:4px;letter-spacing:0.04em;text-transform:uppercase;">OUTBOUND</span><span class="badge b-chip" style="font-size:11px;padding:4px 10px;margin-left:8px;">you were mentioned</span>',
+    body: `
+      <div class="m-detail-section">
+        <div class="m-detail-label">Reference — 外部原帖 <span style="font-family:var(--font-en);font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--peach-500);background:var(--peach-50);padding:2px 6px;border-radius:4px;margin-left:6px;">MENTION</span></div>
+        <div class="tweet"><div class="tweet-head"><div class="tweet-av"></div><span class="tweet-name">Build with AI</span><span class="tweet-handle">@buildwithai · 5h</span></div><div class="tweet-text">Anyone tried Tomo by @erictao? Looks like an AI agent that helps with X distribution. Curious if it actually works or just another auto-poster.</div><div class="tweet-stats"><span>12 replies</span><span>3 RT</span><span>45 likes</span></div></div>
+        <div style="font-size:11.5px;color:var(--n-500);margin-top:6px;">被 @ 触发（Agent mentions scan）。已读 @buildwithai profile：builder community curator, 12k followers, 近期关注 AI 工具评测。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Why — 为什么回</div>
+        <div style="font-size:13px;color:var(--n-800);line-height:1.6;padding:4px 0;">潜在用户在主动了解你的产品 + 公开场合有疑虑。回复等于免费产品介绍，还能被 @buildwithai 的 12k followers 看到。不回等于默认了"auto-poster"指控。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Angle — 建议切入角度</div>
+        <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 12px;font-size:13px;color:var(--n-800);line-height:1.6;">本人出现（比别人转述可信度高），直接澄清"不是 auto-poster"的定位（signal scout / 你仍然按发送键），结尾开放演示邀请，不 hard-sell。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">让 Tomo 写回复</div>
+        <div class="gen-zone" id="genZone-engage-b-2">
+          <button class="gen-btn" onclick="triggerGenEngage('engage-b-2','buildwithai')">
+            <span class="sparkle">✨</span>让 Tomo 写
+          </button>
+          <div style="font-size:11px;color:var(--n-500);margin-top:10px;">基于 @buildwithai profile + Angle + VOICE.md</div>
+        </div>
+      </div>`,
+    footer: '<button class="btn btn-lg btn-ghost">跳过</button><span class="spacer"></span><button class="btn btn-lg btn-teal" id="postBtn-engage-b-2" disabled style="opacity:0.4;cursor:not-allowed;">在 X 上回复 ↗</button>'
+  },
+  'create-1': {
+    badges: '<span class="badge b-type-c-trend">Create</span><span class="badge b-chip" style="font-size:11px;padding:4px 10px;">trending fast</span><span style="font-size:11.5px;color:var(--peach-500);font-weight:600;">~6h window</span>',
+    body: `
+      <div class="m-detail-section">
+        <div class="m-detail-label">Why — 为什么现在</div>
+        <div style="font-size:13.5px;color:var(--n-800);line-height:1.65;font-weight:500;padding:4px 0 8px;">Claude 5 今早发布定价，AI 创业公司成本结构成为焦点 —— 12 个帖子在讨论，总浏览 250k+，但几乎全是 VC 在推测 margin。你每天跑 Tomo 的 AI 基础设施，分享<strong>真实运营成本数据</strong>比任何推测都有穿透力。趋势热度 3h 内上升 340%，窗口约 6 小时。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Reference — 触发素材 <span style="font-family:var(--font-en);font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--amber-600);background:var(--amber-50);padding:2px 6px;border-radius:4px;margin-left:6px;">TWEET</span></div>
+        <div class="tweet"><div class="tweet-head"><div class="tweet-av"></div><span class="tweet-name">Tomasz Tunguz</span><span class="tweet-handle">@ttunguz · 4h</span></div><div class="tweet-text">With Claude 5 pricing, what does an AI-first startup's cost structure actually look like? Is 70% gross margin achievable?</div><div class="tweet-stats"><span>89 replies</span><span>28 RT</span><span>420 likes</span></div></div>
+        <div style="font-size:11.5px;color:var(--n-500);margin-top:6px;"><a href="#" style="color:var(--teal-600);text-decoration:none;">在 X 上查看原帖 ↗</a></div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Angle — 写作角度</div>
+        <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 12px;font-size:13px;color:var(--n-800);line-height:1.6;">以 Tomo 实际 API 支出拆 margin 公式，反驳「70% gross margin」假设。指出 AI-as-feature vs AI-as-product 的结构差异，然后重构价值方程（agent 作为 24/7 员工的单位成本）。</div>
+        <div style="font-size:11px;color:var(--n-500);margin-top:6px;">Cycle 6 先单 Angle。多 Angle A/B 选择能力留待后续。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">让 Tomo 写</div>
+        <div class="gen-zone" id="genZone-create-1">
+          <button class="gen-btn" onclick="triggerGen('create-1')">
+            <span class="sparkle">✨</span>让 Tomo 写
+          </button>
+          <div style="font-size:11px;color:var(--n-500);margin-top:10px;">点击后实时生成（~1s）。基于 Why + Reference + Angle + VOICE.md。</div>
+        </div>
+      </div>`,
+    footer: '<button class="btn btn-lg btn-ghost">跳过</button><span class="spacer"></span><button class="btn btn-lg btn-amber" id="postBtn-create-1" disabled style="opacity:0.4;cursor:not-allowed;">在 X 发帖 ↗</button>'
+  },
+  'create-2': {
+    badges: '<span class="badge b-type-c-trend">Create</span>',
+    body: `
+      <div class="m-detail-section">
+        <div class="m-detail-label">Why — 为什么现在</div>
+        <div style="font-size:13.5px;color:var(--n-800);line-height:1.65;font-weight:500;padding:4px 0 8px;">你昨天 agent reliability 的回复破 340 likes，远超原帖平均。说明「deterministic vs open-ended 的 reliability 拆分」这个角度<strong>有受众且仍在传播</strong>。趁热度把 280 字回复展开成 thread，复利加大曝光。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Reference — 触发素材 <span style="font-family:var(--font-en);font-size:10px;font-weight:700;letter-spacing:0.08em;color:var(--amber-600);background:var(--amber-50);padding:2px 6px;border-radius:4px;margin-left:6px;">IDEA</span></div>
+        <div class="tweet"><div class="tweet-head"><div class="tweet-av me"></div><span class="tweet-name">Eric Tao</span><span class="tweet-handle">@erictao · 昨天</span></div><div class="tweet-text">I run an AI agent 12hrs/day. Deterministic tasks: 95%+ reliable. Open-ended tasks: ~60%. The fix isn't better AI — it's better human-agent workflows. That's not a chatbot. That's a teammate.</div><div class="tweet-stats"><span>340 likes</span><span>28k views</span><span>作为回复发出</span></div></div>
+        <div style="font-size:11.5px;color:var(--n-500);margin-top:6px;">来自 Engage 回复表现 → ideas.md 自动放大</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">Angle — 写作角度</div>
+        <div style="border-left:2px solid var(--teal-400);padding:6px 0 6px 12px;font-size:13px;color:var(--n-800);line-height:1.6;">按 deterministic vs open-ended 拆 agent reliability，给每层一个百分比 + 一个真实例子，最后归到 80/20 人机分工结论（taste lives in the 20%）。Thread 格式，4-5 条。</div>
+      </div>
+      <div class="m-detail-section">
+        <div class="m-detail-label">让 Tomo 写</div>
+        <div class="gen-zone" id="genZone-create-2">
+          <button class="gen-btn" onclick="triggerGen('create-2')">
+            <span class="sparkle">✨</span>让 Tomo 写 Thread
+          </button>
+          <div style="font-size:11px;color:var(--n-500);margin-top:10px;">点击后实时生成（~1s）。基于 Why + Reference + Angle + VOICE.md。</div>
+        </div>
+      </div>`,
+    footer: '<button class="btn btn-lg btn-ghost">跳过</button><span class="spacer"></span><button class="btn btn-lg btn-amber" id="postBtn-create-2" disabled style="opacity:0.4;cursor:not-allowed;">在 X 发帖 ↗</button>'
+  },
+  '_research_placeholder': {
+    badges: '<span class="badge b-type-research">Research</span>',
+    body: `
+      <div class="m-detail-section" style="text-align:center;padding:40px 20px;color:var(--n-500);">
+        Research 详细设计待定
+      </div>`,
+    footer: '<button class="btn btn-lg btn-ghost">关闭</button><span class="spacer"></span><button class="btn btn-lg btn-ghost">存档</button><button class="btn btn-lg" style="background:var(--blue-500);color:white;">分享 Briefing ↗</button>'
+  }
+};
+
+// Open detail
+document.querySelectorAll('.sig[data-detail]').forEach(card => {
+  card.addEventListener('click', () => {
+    const key = card.dataset.detail;
+    const d = detailData[key];
+    if (!d) return;
+    document.getElementById('detailHeaderBadges').innerHTML = d.badges;
+    document.getElementById('detailBody').innerHTML = d.body;
+    document.getElementById('detailFooter').innerHTML = d.footer;
+    document.getElementById('detailPanel').classList.add('open');
+  });
+});
+
+function closeDetail() {
+  document.getElementById('detailPanel').classList.remove('open');
+}
+
+// Async Create Brief generation — simulates API call to /briefs/:id/generate
+const genDrafts = {
+  'create-1': `Everyone's guessing at AI-first startup margins after Claude 5 priced. Here's my actual data.
+
+Tomo runs an AI agent ~12 hrs/day per active user. Current monthly API spend (post-caching + prompt optimization): meaningful slice of my ARPU. Gross margin today: 40–55%, not 70%.
+
+Here's the structural point: 70% margin is for AI-as-feature. When AI IS the product, your COGS = inference, and inference is still expensive.
+
+But the unit of value is different. My agent reads 500 tweets/day, writes drafts, tracks feedback — 24/7, no onboarding. Re-run the margin equation with "employee that costs $X/mo" as the benchmark, not "SaaS feature." The math changes.`,
+  'create-2': `Yesterday I posted about AI agent reliability and it broke out. Here's the full breakdown 🧵
+
+1/ I've been running Tomo's AI agent ~12 hrs/day for months. The reliability question has one answer that's wrong: "it depends on the model."
+
+2/ Deterministic tasks — scanning, filtering, categorizing — 95%+ reliable. My agent reads 500+ tweets/day and surfaces 5–10 that matter. Better than I could do manually, every day.
+
+3/ Open-ended tasks — writing original content, strategic calls — ~60%. Good enough to draft, not good enough to ship without me looking at it.
+
+4/ The fix isn't better models. It's structure. 80% agent + 20% human. The 20% is where taste lives. Stop trying to automate the 20%.`
+};
+
+function triggerGen(detailKey) {
+  const zone = document.getElementById('genZone-' + detailKey);
+  const postBtn = document.getElementById('postBtn-' + detailKey);
+  if (!zone) return;
+  // loading state
+  zone.classList.add('loading');
+  zone.innerHTML = '<div class="gen-loading"><span class="gen-dot"></span><span class="gen-dot"></span><span class="gen-dot"></span>&nbsp;&nbsp;Tomo 正在写…</div>';
+  // simulate ~1s async
+  setTimeout(() => {
+    zone.classList.remove('loading');
+    zone.classList.add('generated');
+    const draft = genDrafts[detailKey] || '';
+    zone.innerHTML = `
+      <div class="gen-output" contenteditable="true">${draft.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}</div>
+      <div class="gen-actions">
+        <span class="gen-hint">基于 Why + Reference + Angle + VOICE.md。可直接编辑。</span>
+        <button class="gen-rewrite" onclick="triggerGen('${detailKey}')">↻ 重写</button>
+      </div>`;
+    if (postBtn) {
+      postBtn.disabled = false;
+      postBtn.style.opacity = '1';
+      postBtn.style.cursor = 'pointer';
+    }
+  }, 1000);
+}
+
+// Multi-reply Engage: select a reply to respond to
+function selectReply(el, replyKey) {
+  // Deselect all siblings
+  el.closest('.m-detail-section').querySelectorAll('.reply-item.selectable').forEach(r => {
+    r.classList.remove('selected');
+    // Hide inline gen-zone for non-selected
+    const inline = r.querySelector('.reply-ask-inline');
+    if (inline) inline.style.display = 'none';
+  });
+  // Select this one
+  el.classList.add('selected');
+  // Reveal this reply's inline gen-zone (the async-gen button)
+  const inline = el.querySelector('.reply-ask-inline');
+  if (inline) inline.style.display = 'block';
+  // Enable the reply button in footer
+  const replyBtn = document.getElementById('replyBtn-engage-a-1');
+  if (replyBtn) {
+    replyBtn.disabled = false;
+    replyBtn.style.opacity = '1';
+    replyBtn.style.cursor = 'pointer';
+    replyBtn.title = '';
+  }
+}
+
+// Async Engage Brief generation — per-reply (Inbound multi-reply) or per-signal (single-reply / Outbound)
+const engageDrafts = {
+  'engage-a-1-jason': `Short-form video democratized reach, not distribution. Reach ≠ conversion. I've built both viral apps (Monkey, 30M users) and B2B distribution — they're fundamentally different muscles. Taste matters, but so does knowing where your people actually are.`,
+  'engage-a-1-sarah': `Week 2 tracks with my experience too. The first few weeks you're riding launch energy — distribution feels easy because you're novel. Month 6 is when novelty wears off and you realize you need a repeatable engine. Most founders don't build that engine early enough because launch metrics mask the problem.`,
+  'engage-a-1-dev': `Would love to compare notes — DM open.`,
+  'engage-a-2': `Great data, Lenny. The 40% CAC increase tracks with what I'm seeing too. At Tomo we're literally building an AI agent to compress that tax — help founders spend less time on distribution mechanics and more on product. The irony of building a distribution tool is that you still need distribution for it 😅`,
+  'engage-b-1': `I run an AI agent 12hrs/day. Here's the real data:\n\nDeterministic tasks (scan, filter, categorize): 95%+ reliable\nOpen-ended tasks (write a post, decide strategy): ~60%\n\nThe chatbot comparison misses the point. Chatbots failed on understanding. Agents fail on autonomy. The fix isn't better AI — it's better human-agent workflows.\n\nThat's not a chatbot. That's a teammate.`,
+  'engage-b-2': `Hey! I'm the one building it. Fair question — Tomo isn't an auto-poster. It scans X for conversations and trends relevant to you, and surfaces which ones are worth engaging with. You still decide what to say.\n\nHappy to show you a demo if you're curious.`
+};
+
+function triggerGenEngage(genKey, replyKey) {
+  const zone = document.getElementById('genZone-' + genKey);
+  if (!zone) return;
+  zone.classList.add('loading');
+  zone.innerHTML = '<div class="gen-loading"><span class="gen-dot"></span><span class="gen-dot"></span><span class="gen-dot"></span>&nbsp;&nbsp;Tomo 正在写…</div>';
+  setTimeout(() => {
+    zone.classList.remove('loading');
+    zone.classList.add('generated');
+    const draft = engageDrafts[genKey] || '';
+    const hint = replyKey ? `针对 @${replyKey} 的 profile + Angle 生成。可直接编辑。` : '基于 Reference + Why + Angle + VOICE.md。可直接编辑。';
+    zone.innerHTML = `
+      <div class="gen-output" contenteditable="true">${draft.replace(/\n\n/g, '<br><br>').replace(/\n/g, '<br>')}</div>
+      <div class="gen-actions">
+        <span class="gen-hint">${hint}</span>
+        <button class="gen-rewrite" onclick="triggerGenEngage('${genKey}','${replyKey || ''}')">↻ 重写</button>
+      </div>`;
+    // Enable parent Signal's reply button
+    const replyBtnA1 = document.getElementById('replyBtn-engage-a-1');
+    if (replyBtnA1) { replyBtnA1.disabled = false; replyBtnA1.style.opacity = '1'; replyBtnA1.style.cursor = 'pointer'; }
+    const replyBtnSingle = document.getElementById('postBtn-' + genKey);
+    if (replyBtnSingle) { replyBtnSingle.disabled = false; replyBtnSingle.style.opacity = '1'; replyBtnSingle.style.cursor = 'pointer'; }
+  }, 1000);
+}
+
+function pickAngle(el) {
+  el.parentElement.querySelectorAll('.angle').forEach(a => a.classList.remove('picked'));
+  el.classList.add('picked');
+  el.parentElement.querySelectorAll('.angle-n').forEach(n => { n.style.background=''; n.style.color=''; });
+  el.querySelector('.angle-n').style.background = 'var(--amber-500)';
+  el.querySelector('.angle-n').style.color = 'white';
+}
+
+// Chat
+function sendChat() {
+  const input = document.getElementById('chatInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const msgs = document.getElementById('chatMsgs');
+
+  // User message
+  msgs.innerHTML += `<div class="m-chat-msg user"><div class="m-chat-av">E</div><div class="m-chat-bubble">${text}</div></div>`;
+  input.value = '';
+
+  // Agent response (simulated)
+  setTimeout(() => {
+    msgs.innerHTML += `<div class="m-chat-msg agent"><div class="m-chat-av">T</div><div class="m-chat-bubble">已记录。这会影响我接下来的 scan 判断 — 相关话题在 Signals 里出现时会有更高优先级。</div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  }, 600);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Interview mode toggle
+function toggleInterview() {
+  const banner = document.getElementById('ivBanner');
+  if (!banner) return;
+  banner.style.display = banner.style.display === 'none' ? 'flex' : 'none';
+}
+
+// Interview choice picking
+document.addEventListener('click', (e) => {
+  const choice = e.target.closest('.iv-choice');
+  if (choice) {
+    choice.parentElement.querySelectorAll('.iv-choice').forEach(c => c.classList.remove('picked'));
+    choice.classList.add('picked');
+  }
+});
+
+// Placeholder to keep existing structure (original sendChat closed above)
+function _noop() {
+}
+</script>
+
+</body>
+</html>
