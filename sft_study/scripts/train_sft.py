@@ -20,6 +20,16 @@ from common import (
     save_json,
 )
 
+GENERATION_BLOCK_MARKERS = ("{% generation %}", "{% endgeneration %}")
+TRAINING_TEMPLATE_FAMILY_ALIASES = {
+    "qwen2_5": ("qwen2.5", "qwen2_5"),
+    "qwen3": ("qwen3",),
+    "llama3": ("llama3", "llama-3"),
+    "gemma2": ("gemma2", "gemma-2"),
+    "gemma": ("gemma",),
+    "gpt_oss": ("gpt-oss", "gpt_oss"),
+}
+
 
 def parse_args() -> argparse.Namespace:
     # 这个脚本是整套实验的统一训练入口。
@@ -139,6 +149,59 @@ def _prepare_model_init_kwargs(args: argparse.Namespace, torch: Any, BitsAndByte
     return kwargs
 
 
+def _has_training_generation_blocks(chat_template: str | None) -> bool:
+    if not chat_template:
+        return False
+    return all(marker in chat_template for marker in GENERATION_BLOCK_MARKERS)
+
+
+def _load_trl_chat_template(template_name: str) -> str | None:
+    template_path = importlib.resources.files("trl").joinpath("chat_templates", template_name)
+    try:
+        return template_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        return None
+
+
+def _infer_chat_template_family(
+        tokenizer: Any,
+        model_name_or_path: str,
+        tokenizer_name_or_path: str | None,
+) -> str | None:
+    candidates = [
+        model_name_or_path,
+        tokenizer_name_or_path or "",
+        getattr(tokenizer, "name_or_path", "") or "",
+        getattr(tokenizer, "chat_template", "") or "",
+    ]
+    normalized = " ".join(value.lower() for value in candidates)
+
+    for family, aliases in TRAINING_TEMPLATE_FAMILY_ALIASES.items():
+        if any(alias in normalized for alias in aliases):
+            return family
+    return None
+
+
+def _load_family_training_template(
+        tokenizer: Any,
+        model_name_or_path: str,
+        tokenizer_name_or_path: str | None,
+) -> tuple[str | None, str | None]:
+    family = _infer_chat_template_family(
+        tokenizer=tokenizer,
+        model_name_or_path=model_name_or_path,
+        tokenizer_name_or_path=tokenizer_name_or_path,
+    )
+    if family is None:
+        return None, None
+
+    template_name = f"{family}_training.jinja"
+    template = _load_trl_chat_template(template_name)
+    if template is None:
+        return None, None
+    return family, template
+
+
 def _ensure_training_compatible_chat_template(
         tokenizer: Any,
         model_name_or_path: str,
@@ -149,6 +212,10 @@ def _ensure_training_compatible_chat_template(
     if not assistant_only_loss:
         return None
 
+    current_chat_template = getattr(tokenizer, "chat_template", None)
+    if _has_training_generation_blocks(current_chat_template):
+        return "tokenizer_training_template"
+
     try:
         patched_chat_template = get_training_chat_template(tokenizer)
     except ValueError:
@@ -158,20 +225,16 @@ def _ensure_training_compatible_chat_template(
         tokenizer.chat_template = patched_chat_template
         return "trl_auto_patch"
 
-    def _is_qwen2_5_family(model_name_or_path: str, tokenizer_name_or_path: str | None) -> bool:
-        candidates = [model_name_or_path, tokenizer_name_or_path or ""]
-        normalized = " ".join(value.lower() for value in candidates)
-        return "qwen2.5" in normalized or "qwen2_5" in normalized
-
-    def _load_trl_training_template(template_name: str) -> str:
-        template_path = importlib.resources.files("trl").joinpath("chat_templates", template_name)
-        return template_path.read_text(encoding="utf-8")
-
-    if _is_qwen2_5_family(model_name_or_path, tokenizer_name_or_path):
-        # Qwen2.5 的普通推理模板通常不带 {% generation %} 标记。
-        # 如果当前 TRL 版本没有自动识别成功，就显式换成官方内置的训练模板。
-        tokenizer.chat_template = _load_trl_training_template("qwen2_5_training.jinja")
-        return "trl_qwen2_5_training_template"
+    family, fallback_template = _load_family_training_template(
+        tokenizer=tokenizer,
+        model_name_or_path=model_name_or_path,
+        tokenizer_name_or_path=tokenizer_name_or_path,
+    )
+    if fallback_template:
+        # 有些 tokenizer 明明属于 TRL 已支持的 family，
+        # 但当前版本的自动识别仍可能失败。这里退回到官方 training template 文件。
+        tokenizer.chat_template = fallback_template
+        return f"trl_{family}_training_template"
 
     raise ValueError(
         "The tokenizer's chat template is not training-compatible for assistant_only_loss=True, "
