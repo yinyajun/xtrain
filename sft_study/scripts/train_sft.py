@@ -81,7 +81,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--logging_steps", type=int, default=10, help="每隔多少步打印一次训练日志。")
     parser.add_argument("--eval_steps", type=int, default=100, help="每隔多少步做一次验证。")
     parser.add_argument("--save_steps", type=int, default=100, help="每隔多少步保存一次 checkpoint。")
-    parser.add_argument("--save_total_limit", type=int, default=2, help="最多保留多少个 checkpoint。")
+    parser.add_argument("--save_total_limit", type=int, default=1, help="最多保留多少个 checkpoint。")
     assistant_loss_group = parser.add_mutually_exclusive_group()
     assistant_loss_group.add_argument(
         "--assistant_only_loss",

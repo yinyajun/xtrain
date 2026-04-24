@@ -7,6 +7,7 @@ MODEL="${MODEL:-Qwen/Qwen2.5-7B}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-}"
 REPORT_TO="${REPORT_TO:-none}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
+OUTPUT_DIR="$ROOT_DIR/outputs/e1_no_robots_smoke"
 
 CMD=(
   "$PYTHON_BIN" "$ROOT_DIR/scripts/train_sft.py"
@@ -17,7 +18,7 @@ CMD=(
   --eval_dataset "HuggingFaceH4/no_robots" \
   --eval_dataset_config "" \
   --eval_split "test_sft" \
-  --output_dir "$ROOT_DIR/outputs/e1_no_robots_smoke" \
+  --output_dir "$OUTPUT_DIR" \
   --run_name "e1_no_robots_smoke" \
   --max_train_samples 2000 \
   --max_eval_samples 200 \
@@ -28,12 +29,12 @@ CMD=(
   --logging_steps 10 \
   --eval_steps 50 \
   --save_steps 50 \
-  --save_total_limit 2 \
+  --save_total_limit 1 \
   --max_length 2048 \
   --learning_rate 1e-4 \
   --lr_scheduler_type cosine \
   --warmup_ratio 0.03 \
-  --weight_decay 0.01 \
+  --weight_decay 0.0 \
   --quantization auto \
   --lora_r 16 \
   --lora_alpha 32 \
@@ -53,3 +54,7 @@ if [[ -n "$TOKENIZER_PATH" ]]; then
 fi
 
 "${CMD[@]}"
+
+"$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py" \
+  --checkpoint_dir "$OUTPUT_DIR" \
+  --skip_benchmarks

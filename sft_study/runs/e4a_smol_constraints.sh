@@ -10,6 +10,7 @@ SLICE_JSONL="$ROOT_DIR/artifacts/datasets/e4a_smol_constraints_token_matched.jso
 REPORT_TO="${REPORT_TO:-none}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 COMMON_EVAL_CONFIG="${COMMON_EVAL_CONFIG:-smol-magpie-ultra}"
+OUTPUT_DIR="$ROOT_DIR/outputs/e4a_smol_constraints"
 
 "$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_tools.py" token-match \
   --model_name_or_path "$MODEL" \
@@ -38,7 +39,7 @@ CMD=(
   --eval_dataset "HuggingFaceTB/smoltalk" \
   --eval_dataset_config "$COMMON_EVAL_CONFIG" \
   --eval_split "test" \
-  --output_dir "$ROOT_DIR/outputs/e4a_smol_constraints" \
+  --output_dir "$OUTPUT_DIR" \
   --run_name "e4a_smol_constraints" \
   --max_eval_samples 1000 \
   --num_train_epochs 1 \
@@ -48,7 +49,7 @@ CMD=(
   --logging_steps 10 \
   --eval_steps 100 \
   --save_steps 100 \
-  --save_total_limit 2 \
+  --save_total_limit 1 \
   --max_length 2048 \
   --learning_rate 1e-4 \
   --lr_scheduler_type cosine \
@@ -73,3 +74,7 @@ if [[ -n "$TOKENIZER_PATH" ]]; then
 fi
 
 "${CMD[@]}"
+
+"$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py" \
+  --checkpoint_dir "$OUTPUT_DIR" \
+  --skip_benchmarks

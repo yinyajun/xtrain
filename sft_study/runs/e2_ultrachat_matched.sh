@@ -8,6 +8,7 @@ TOKENIZER_PATH="${TOKENIZER_PATH:-}"
 TRAIN_JSONL="${TRAIN_JSONL:-$ROOT_DIR/artifacts/datasets/e2_ultrachat_token_matched_train.jsonl}"
 REPORT_TO="${REPORT_TO:-none}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
+OUTPUT_DIR="$ROOT_DIR/outputs/e2_ultrachat_matched"
 
 CMD=(
   "$PYTHON_BIN" "$ROOT_DIR/scripts/train_sft.py"
@@ -16,7 +17,7 @@ CMD=(
   --train_split "train" \
   --eval_dataset "HuggingFaceH4/ultrachat_200k" \
   --eval_split "test_sft" \
-  --output_dir "$ROOT_DIR/outputs/e2_ultrachat_matched" \
+  --output_dir "$OUTPUT_DIR" \
   --run_name "e2_ultrachat_matched" \
   --num_train_epochs 1 \
   --max_eval_samples 500 \
@@ -26,7 +27,7 @@ CMD=(
   --logging_steps 10 \
   --eval_steps 100 \
   --save_steps 100 \
-  --save_total_limit 2 \
+  --save_total_limit 1 \
   --max_length 2048 \
   --learning_rate 1e-4 \
   --lr_scheduler_type cosine \
@@ -51,3 +52,7 @@ if [[ -n "$TOKENIZER_PATH" ]]; then
 fi
 
 "${CMD[@]}"
+
+"$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py" \
+  --checkpoint_dir "$OUTPUT_DIR" \
+  --skip_benchmarks

@@ -9,6 +9,7 @@ REPORT_TO="${REPORT_TO:-none}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 TRAIN_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_train.jsonl"
 EVAL_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_eval.jsonl"
+OUTPUT_DIR="$ROOT_DIR/outputs/e5_tulu3_100k"
 
 "$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_tools.py" holdout-split \
   --dataset "allenai/tulu-3-sft-mixture" \
@@ -26,7 +27,7 @@ CMD=(
   --train_split "train" \
   --eval_dataset "$EVAL_JSONL" \
   --eval_split "train" \
-  --output_dir "$ROOT_DIR/outputs/e5_tulu3_100k" \
+  --output_dir "$OUTPUT_DIR" \
   --run_name "e5_tulu3_100k" \
   --num_train_epochs 1 \
   --per_device_train_batch_size 2 \
@@ -35,7 +36,7 @@ CMD=(
   --logging_steps 10 \
   --eval_steps 200 \
   --save_steps 200 \
-  --save_total_limit 2 \
+  --save_total_limit 1 \
   --max_length 2048 \
   --learning_rate 1e-4 \
   --lr_scheduler_type cosine \
@@ -60,3 +61,7 @@ if [[ -n "$TOKENIZER_PATH" ]]; then
 fi
 
 "${CMD[@]}"
+
+"$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py" \
+  --checkpoint_dir "$OUTPUT_DIR" \
+  --skip_benchmarks
