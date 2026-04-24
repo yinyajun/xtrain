@@ -555,6 +555,8 @@ BENCHMARKS="ifeval gsm8k" \
   默认会尝试自动打印本次评估使用的 tokenizer special tokens；必要时可显式传 `--tokenizer_name_or_path`
 - 单条样本调试：`python sft_study/scripts/debug_single_fixed_prompt.py --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
   用来排查“为什么停不住”这类问题；会打印渲染后的 prompt、tokenizer special tokens、raw completion（`skip_special_tokens=False`）以及 `<|im_end|>` 在生成序列中的位置
+- eos rank 对比：`python sft_study/scripts/compare_fixed_prompt_eos_rank.py --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
+  用来对比 base model 和 checkpoint 在同一条 fixed prompt 上的 `chosen token / eos_rank / eos_logit`，方便判断 SFT 是把 eos 往前推了还是往后推了
 - 训练样本 token 检查：`python sft_study/scripts/inspect_training_examples.py --checkpoint_dir <checkpoint_dir> --num_examples 10`
   会直接读取训练集前 N 条，把 `messages -> chat template -> token ids` 这条链渲染出来，并额外对比 checkpoint 里保存的 `chat_template.jinja`
 - 固定 prompts viewer：直接打开 `sft_study/fixed_prompts_viewer.html`
