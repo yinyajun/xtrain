@@ -69,7 +69,7 @@ def resolve_context(args: argparse.Namespace) -> dict[str, Any]:
         "model_name_or_path": model_name_or_path,
         "adapter_path": adapter_path,
         "tokenizer_name_or_path": tokenizer_name_or_path,
-        "prompts_file": prompts_file,
+        "prompts_file": str(prompts_file),
     }
 
 
