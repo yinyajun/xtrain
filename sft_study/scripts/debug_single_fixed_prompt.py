@@ -118,6 +118,7 @@ def inspect_top_k_next_tokens(
     full_ids = output_ids[0].detach().cpu().tolist()
     completion_length = len(full_ids) - prompt_length
     limit = min(inspect_steps, completion_length)
+    eos_token_id = tokenizer.eos_token_id
     summaries: list[dict[str, Any]] = []
 
     for step in range(limit):
@@ -125,6 +126,9 @@ def inspect_top_k_next_tokens(
         chosen_index = prompt_length + step
         chosen_token_id = full_ids[chosen_index]
         step_logits = logits[source_index]
+        eos_logit = float(step_logits[eos_token_id].item()) if eos_token_id is not None else None
+        higher_than_eos = int((step_logits > step_logits[eos_token_id]).sum().item()) if eos_token_id is not None else None
+        eos_rank = higher_than_eos + 1 if higher_than_eos is not None else None
         top_values, top_indices = torch.topk(step_logits, k=min(top_k, step_logits.shape[-1]))
         candidates = []
         for rank, (candidate_id, logit_value) in enumerate(
@@ -151,6 +155,8 @@ def inspect_top_k_next_tokens(
                 "chosen_token_id": chosen_token_id,
                 "chosen_piece": decode_token_piece(tokenizer, chosen_token_id),
                 "chosen_is_eos": chosen_token_id == tokenizer.eos_token_id,
+                "eos_rank": eos_rank,
+                "eos_logit": round(eos_logit, 6) if eos_logit is not None else None,
                 "top_k": candidates,
             }
         )
