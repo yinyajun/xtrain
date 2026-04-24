@@ -32,6 +32,7 @@ sft_study/
     train_sft.py
     dataset_tools.py
     generate_fixed_prompts.py
+    review_fixed_prompts.py
     run_lm_eval.py
     evaluate_checkpoint.py
     inspect_model.py
@@ -525,6 +526,20 @@ CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
   bash sft_study/runs/eval_checkpoint.sh
 ```
 
+如果你这次只想快速看 fixed case，不想跑 benchmark：
+
+```bash
+python sft_study/scripts/evaluate_checkpoint.py \
+  --checkpoint_dir sft_study/outputs/e1_no_robots_smoke \
+  --skip_benchmarks
+```
+
+说明：
+
+- 这条命令会自动从 `checkpoint_dir/run_config.json` 里恢复底模信息
+- 会把 `checkpoint_dir` 本身当成 `adapter_path` 来加载
+- 默认输出到 `sft_study/outputs/e1_no_robots_smoke/eval/fixed_prompts.jsonl`
+
 如果你只想跑部分 benchmark：
 
 ```bash
@@ -536,6 +551,7 @@ BENCHMARKS="ifeval gsm8k" \
 输出约定：
 
 - 固定 prompts：`<eval_output_dir>/fixed_prompts.jsonl`
+- 固定 prompts 轻量 review：`python sft_study/scripts/review_fixed_prompts.py --results_file <eval_output_dir>/fixed_prompts.jsonl`
 - benchmark 原始结果：`<eval_output_dir>/benchmarks/`
 - 汇总：`<eval_output_dir>/benchmarks/summary.json`
 

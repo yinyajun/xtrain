@@ -30,7 +30,7 @@ CMD=(
   --save_steps 100 \
   --save_total_limit 2 \
   --max_length 2048 \
-  --learning_rate 5e-6 \
+  --learning_rate 1e-5 \
   --lr_scheduler_type cosine \
   --warmup_ratio 0.03 \
   --weight_decay 0.01 \
