@@ -31,6 +31,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42, help="随机种子。")
     parser.add_argument("--revision", default=None, help="模型 revision。")
     parser.add_argument("--trust_remote_code", action="store_true", help="是否允许 remote code。")
+    parser.add_argument("--inspect_steps", type=int, default=8, help="额外打印前多少个生成位置的 top-k next-token 候选。")
+    parser.add_argument("--top_k", type=int, default=10, help="每个生成位置打印多少个 top-k token。")
     return parser.parse_args()
 
 
@@ -90,6 +92,70 @@ def token_positions(token_ids: list[int], target_id: int | None) -> list[int]:
     if target_id is None:
         return []
     return [index for index, token_id in enumerate(token_ids) if token_id == target_id]
+
+
+def decode_token_piece(tokenizer: Any, token_id: int) -> str:
+    return tokenizer.decode([token_id], skip_special_tokens=False).replace("\n", "\\n")
+
+
+def inspect_top_k_next_tokens(
+    model: Any,
+    tokenizer: Any,
+    output_ids: Any,
+    prompt_length: int,
+    inspect_steps: int,
+    top_k: int,
+) -> list[dict[str, Any]]:
+    import torch
+
+    if inspect_steps <= 0 or top_k <= 0:
+        return []
+
+    attention_mask = torch.ones_like(output_ids)
+    with torch.inference_mode():
+        logits = model(input_ids=output_ids, attention_mask=attention_mask).logits[0]
+
+    full_ids = output_ids[0].detach().cpu().tolist()
+    completion_length = len(full_ids) - prompt_length
+    limit = min(inspect_steps, completion_length)
+    summaries: list[dict[str, Any]] = []
+
+    for step in range(limit):
+        source_index = prompt_length - 1 + step
+        chosen_index = prompt_length + step
+        chosen_token_id = full_ids[chosen_index]
+        step_logits = logits[source_index]
+        top_values, top_indices = torch.topk(step_logits, k=min(top_k, step_logits.shape[-1]))
+        candidates = []
+        for rank, (candidate_id, logit_value) in enumerate(
+            zip(top_indices.detach().cpu().tolist(), top_values.detach().cpu().tolist()),
+            start=1,
+        ):
+            candidates.append(
+                {
+                    "rank": rank,
+                    "token_id": candidate_id,
+                    "piece": decode_token_piece(tokenizer, candidate_id),
+                    "logit": round(float(logit_value), 6),
+                    "is_chosen": candidate_id == chosen_token_id,
+                    "is_eos": candidate_id == tokenizer.eos_token_id,
+                }
+            )
+
+        summaries.append(
+            {
+                "step": step,
+                "source_index": source_index,
+                "source_piece": decode_token_piece(tokenizer, full_ids[source_index]),
+                "chosen_index": chosen_index,
+                "chosen_token_id": chosen_token_id,
+                "chosen_piece": decode_token_piece(tokenizer, chosen_token_id),
+                "chosen_is_eos": chosen_token_id == tokenizer.eos_token_id,
+                "top_k": candidates,
+            }
+        )
+
+    return summaries
 
 
 def main() -> None:
@@ -167,6 +233,14 @@ def main() -> None:
     completion_ids_list = completion_ids.detach().cpu().tolist()
     raw_completion = tokenizer.decode(completion_ids, skip_special_tokens=False)
     clean_completion = tokenizer.decode(completion_ids, skip_special_tokens=True).strip()
+    top_k_debug = inspect_top_k_next_tokens(
+        model=model,
+        tokenizer=tokenizer,
+        output_ids=output_ids,
+        prompt_length=prompt_length,
+        inspect_steps=args.inspect_steps,
+        top_k=args.top_k,
+    )
 
     im_start_id = tokenizer.convert_tokens_to_ids("<|im_start|>")
     im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
@@ -202,6 +276,7 @@ def main() -> None:
         "rendered_prompt": rendered_prompt,
         "raw_completion": raw_completion,
         "clean_completion": clean_completion,
+        "top_k_next_tokens": top_k_debug,
     }
 
     print(json.dumps(report["resolved_context"], ensure_ascii=False, indent=2))
@@ -223,6 +298,10 @@ def main() -> None:
     print()
     print("=== Clean Completion (skip_special_tokens=True) ===")
     print(report["clean_completion"])
+    if report["top_k_next_tokens"]:
+        print()
+        print("=== Top-K Next Tokens ===")
+        print(json.dumps(report["top_k_next_tokens"], ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
