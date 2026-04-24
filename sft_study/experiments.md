@@ -555,6 +555,8 @@ BENCHMARKS="ifeval gsm8k" \
   默认会尝试自动打印本次评估使用的 tokenizer special tokens；必要时可显式传 `--tokenizer_name_or_path`
 - 单条样本调试：`python sft_study/scripts/debug_single_fixed_prompt.py --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
   用来排查“为什么停不住”这类问题；会打印渲染后的 prompt、tokenizer special tokens、raw completion（`skip_special_tokens=False`）以及 `<|im_end|>` 在生成序列中的位置
+- 训练样本 token 检查：`python sft_study/scripts/inspect_training_examples.py --checkpoint_dir <checkpoint_dir> --num_examples 10`
+  会直接读取训练集前 N 条，把 `messages -> chat template -> token ids` 这条链渲染出来，并额外对比 checkpoint 里保存的 `chat_template.jinja`
 - 固定 prompts viewer：直接打开 `sft_study/fixed_prompts_viewer.html`
   在浏览器里选择一个或多个 `fixed_prompts.jsonl` 文件后，就能以更易读的卡片形式查看内容；不需要 build，也不需要起服务
 - benchmark 原始结果：`<eval_output_dir>/benchmarks/`
