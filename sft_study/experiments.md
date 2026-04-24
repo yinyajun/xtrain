@@ -557,6 +557,8 @@ BENCHMARKS="ifeval gsm8k" \
   用来排查“为什么停不住”这类问题；会打印渲染后的 prompt、tokenizer special tokens、raw completion（`skip_special_tokens=False`）以及 `<|im_end|>` 在生成序列中的位置
 - eos rank 对比：`python sft_study/scripts/compare_fixed_prompt_eos_rank.py --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
   用来对比 base model 和 checkpoint 在同一条 fixed prompt 上的 `chosen token / native eos / <|im_end|> / <|endoftext|>` 倾向，避免把不同 tokenizer 的 eos 混在一起看
+- 停止行为监控：`python sft_study/scripts/monitor_stop_behavior.py --checkpoint_dir <checkpoint_dir>`
+  会同时给出普通 assistant 回复末尾 `<|im_end|>` 的平均 NLL、空 assistant probe 的 `<|im_end|>` NLL，以及 fixed prompts 的自然停止率，适合按 checkpoint 或 epoch 纵向看趋势
 - 训练样本 token 检查：`python sft_study/scripts/inspect_training_examples.py --checkpoint_dir <checkpoint_dir> --num_examples 10`
   会直接读取训练集前 N 条，把 `messages -> chat template -> token ids` 这条链渲染出来，并额外对比 checkpoint 里保存的 `chat_template.jinja`
 - 固定 prompts viewer：直接打开 `sft_study/fixed_prompts_viewer.html`
