@@ -37,6 +37,7 @@ REFUSAL_HINTS = (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Review fixed-prompt generations and summarize pass/fail heuristics.")
     parser.add_argument("--results_file", required=True, help="`generate_fixed_prompts.py` 输出的 JSONL 文件。")
+    parser.add_argument("--tokenizer_name_or_path", default=None, help="可选：显式指定要检查 special tokens 的 tokenizer。")
     parser.add_argument("--output_json", default=None, help="可选：把 review 结果保存成 JSON。")
     parser.add_argument("--strict", action="store_true", help="如果存在失败样本，返回非零退出码。")
     return parser.parse_args()
@@ -237,10 +238,29 @@ def review_row(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def render_text_report(summary: dict[str, Any]) -> str:
-    lines = [
+    lines = []
+    special_tokens = summary.get("special_tokens")
+    if isinstance(special_tokens, dict):
+        lines.extend(
+            [
+                f"Tokenizer for review: {special_tokens['tokenizer_name_or_path']}",
+                "Special tokens:",
+                f"  eos_token={special_tokens['eos_token']!r} eos_token_id={special_tokens['eos_token_id']}",
+                f"  pad_token={special_tokens['pad_token']!r} pad_token_id={special_tokens['pad_token_id']}",
+                f"  bos_token={special_tokens['bos_token']!r} bos_token_id={special_tokens['bos_token_id']}",
+                f"  <|im_start|> id={special_tokens['im_start_token_id']}",
+                f"  <|im_end|> id={special_tokens['im_end_token_id']}",
+                f"  <|endoftext|> id={special_tokens['endoftext_token_id']}",
+                "",
+            ]
+        )
+    elif special_tokens is not None:
+        lines.extend([f"Special tokens: {special_tokens}", ""])
+
+    lines.extend([
         f"Reviewed {summary['total_rows']} fixed prompts.",
         f"Scored prompts: {summary['scored_rows']} | passed: {summary['passed_rows']} | failed: {summary['failed_rows']} | manual review: {summary['review_rows']}",
-    ]
+    ])
     if summary["scored_rows"]:
         pass_rate = summary["passed_rows"] / summary["scored_rows"]
         lines.append(f"Pass rate: {pass_rate:.1%}")
@@ -257,13 +277,83 @@ def render_text_report(summary: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _load_json_if_exists(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def resolve_tokenizer_name_or_path(results_file: Path, explicit_path: str | None) -> str | None:
+    if explicit_path:
+        return explicit_path
+
+    eval_config = _load_json_if_exists(results_file.parent / "evaluation_config.json")
+    if eval_config is not None:
+        candidate = eval_config.get("tokenizer_name_or_path")
+        if isinstance(candidate, str) and candidate:
+            candidate_path = Path(candidate)
+            if not candidate_path.is_absolute() or candidate_path.exists():
+                return candidate
+
+    # 如果 evaluation_config 里记录的是训练时容器路径，优先回退到当前结果文件的上一级输出目录。
+    output_dir_candidate = results_file.parent.parent if results_file.parent.name == "eval" else results_file.parent
+    if (output_dir_candidate / "tokenizer_config.json").exists() or (output_dir_candidate / "tokenizer.json").exists():
+        return str(output_dir_candidate)
+
+    return None
+
+
+def load_special_token_summary(tokenizer_name_or_path: str | None) -> dict[str, Any] | str | None:
+    if not tokenizer_name_or_path:
+        return None
+
+    try:
+        from transformers import AutoTokenizer
+    except Exception as exc:
+        return f"tokenizer inspection unavailable ({type(exc).__name__}: {exc})"
+
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(tokenizer_name_or_path, use_fast=True)
+    except Exception as exc:
+        return f"failed to load tokenizer {tokenizer_name_or_path!r} ({type(exc).__name__}: {exc})"
+
+    def token_id(token: str) -> int | None:
+        try:
+            value = tokenizer.convert_tokens_to_ids(token)
+        except Exception:
+            return None
+        return None if value == getattr(tokenizer, "unk_token_id", None) and token != getattr(tokenizer, "unk_token", None) else value
+
+    return {
+        "tokenizer_name_or_path": tokenizer_name_or_path,
+        "eos_token": tokenizer.eos_token,
+        "eos_token_id": tokenizer.eos_token_id,
+        "pad_token": tokenizer.pad_token,
+        "pad_token_id": tokenizer.pad_token_id,
+        "bos_token": tokenizer.bos_token,
+        "bos_token_id": tokenizer.bos_token_id,
+        "im_start_token_id": token_id("<|im_start|>"),
+        "im_end_token_id": token_id("<|im_end|>"),
+        "endoftext_token_id": token_id("<|endoftext|>"),
+    }
+
+
 def main() -> None:
     args = parse_args()
-    rows = read_jsonl(args.results_file)
+    results_path = Path(args.results_file).resolve()
+    rows = read_jsonl(results_path)
     reviewed_rows = [review_row(row) for row in rows]
+    tokenizer_name_or_path = resolve_tokenizer_name_or_path(results_path, args.tokenizer_name_or_path)
+    special_tokens = load_special_token_summary(tokenizer_name_or_path)
 
     summary = {
-        "results_file": str(Path(args.results_file).resolve()),
+        "results_file": str(results_path),
+        "resolved_tokenizer_name_or_path": tokenizer_name_or_path,
+        "special_tokens": special_tokens,
         "total_rows": len(reviewed_rows),
         "scored_rows": sum(1 for row in reviewed_rows if row["status"] in {"pass", "fail"}),
         "passed_rows": sum(1 for row in reviewed_rows if row["status"] == "pass"),

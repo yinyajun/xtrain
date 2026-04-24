@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fixed Prompts Viewer</title>
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --panel: #fffdf9;
+      --line: #ddd4c8;
+      --ink: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-soft: #eef4ff;
+      --user: #f6efe4;
+      --assistant: #eef7ef;
+      --system: #f3eef9;
+      --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+      --mono: "SFMono-Regular", Menlo, Consolas, monospace;
+      --sans: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background: linear-gradient(180deg, #fbf8f2 0%, var(--bg) 100%);
+    }
+
+    .page {
+      width: min(1120px, calc(100vw - 24px));
+      margin: 0 auto;
+      padding: 24px 0 40px;
+    }
+
+    .hero,
+    .panel,
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .hero,
+    .panel {
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: clamp(30px, 5vw, 42px);
+      letter-spacing: -0.04em;
+    }
+
+    p,
+    .meta,
+    .hint {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .upload-row,
+    .filter-row,
+    .meta-row {
+      display: grid;
+      gap: 12px;
+    }
+
+    .upload-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+    }
+
+    .filter-row {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .meta-row {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      margin-top: 14px;
+    }
+
+    .drop-zone {
+      border: 1.5px dashed #bfc9d8;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #fbfdff 0%, #f5f8ff 100%);
+      padding: 18px;
+      min-height: 110px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
+    }
+
+    .drop-zone.dragover {
+      border-color: var(--accent);
+      background: #edf4ff;
+      transform: translateY(-1px);
+    }
+
+    .drop-zone strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .button,
+    select,
+    input[type="search"] {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      color: var(--ink);
+      font: inherit;
+    }
+
+    .button {
+      padding: 0 14px;
+      cursor: pointer;
+      background: #ffffff;
+    }
+
+    .button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
+
+    select,
+    input[type="search"] {
+      width: 100%;
+      padding: 0 12px;
+    }
+
+    .meta-box {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      background: #fff;
+      min-height: 78px;
+    }
+
+    .meta-box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .meta-box span {
+      display: block;
+      word-break: break-word;
+      line-height: 1.5;
+    }
+
+    .status {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+      color: #23436c;
+      font-size: 14px;
+    }
+
+    .list {
+      display: grid;
+      gap: 16px;
+    }
+
+    .card {
+      padding: 18px;
+    }
+
+    .card-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: start;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      margin: 0 0 6px;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+    }
+
+    .file-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #eef4ff;
+      color: #265191;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #eef7ff;
+      color: #215d96;
+      font-size: 12px;
+    }
+
+    .section-title {
+      margin: 14px 0 8px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .message-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .message {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .message.user {
+      background: var(--user);
+    }
+
+    .message.assistant {
+      background: var(--assistant);
+    }
+
+    .message.system {
+      background: var(--system);
+    }
+
+    .message-role {
+      display: inline-block;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.65;
+    }
+
+    .response {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #1f2937;
+      color: #f8fafc;
+      padding: 14px;
+      max-height: 520px;
+      overflow: auto;
+    }
+
+    .empty {
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 40px 18px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    @media (max-width: 760px) {
+      .upload-row,
+      .filter-row,
+      .meta-row,
+      .card-head {
+        grid-template-columns: 1fr;
+      }
+
+      .card-head {
+        display: grid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <section class="hero">
+      <h1>Fixed Prompts Viewer</h1>
+      <p>Open this HTML file directly in your browser, then choose one or more <code>fixed_prompts.jsonl</code> files from <code>sft_study/outputs</code>. No build step, no server.</p>
+    </section>
+
+    <section class="panel">
+      <div class="upload-row">
+        <label class="drop-zone" id="dropZone" for="fileInput">
+          <div>
+            <strong>Drop JSONL files here</strong>
+            <div class="hint">or click to pick one or more <code>fixed_prompts.jsonl</code> files</div>
+          </div>
+        </label>
+        <div class="button-row">
+          <label class="button primary" for="fileInput">Choose Files</label>
+          <button id="clearButton" class="button" type="button" disabled>Clear</button>
+        </div>
+      </div>
+      <input id="fileInput" type="file" accept=".jsonl,.json" multiple>
+      <div id="status" class="status">No files loaded yet.</div>
+    </section>
+
+    <section class="panel">
+      <div class="filter-row">
+        <div>
+          <div class="section-title">Run</div>
+          <select id="runSelect" disabled></select>
+        </div>
+        <div>
+          <div class="section-title">Prompt</div>
+          <select id="promptSelect" disabled></select>
+        </div>
+        <div>
+          <div class="section-title">Search</div>
+          <input id="searchInput" type="search" placeholder="Search id, tags, messages, or response" disabled>
+        </div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-box">
+          <strong>Source File</strong>
+          <span id="sourceFile">-</span>
+        </div>
+        <div class="meta-box">
+          <strong>Rows</strong>
+          <span id="rowCount">-</span>
+        </div>
+        <div class="meta-box">
+          <strong>Loaded At</strong>
+          <span id="loadedAt">-</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="list" class="list">
+      <div class="empty">Load a <code>fixed_prompts.jsonl</code> file to start browsing.</div>
+    </section>
+  </div>
+
+  <script>
+    const state = {
+      runs: [],
+      activeRunId: "",
+      promptId: "all",
+      query: "",
+    };
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function inferRunLabel(file) {
+      const name = file.name.replace(/\.jsonl?$/i, "");
+      if (name.endsWith("_fixed_prompts")) {
+        return name.slice(0, -"_fixed_prompts".length);
+      }
+      return name;
+    }
+
+    function parseJsonl(text) {
+      const rows = [];
+      const lines = text.split(/\r?\n/);
+      for (let i = 0; i < lines.length; i += 1) {
+        const line = lines[i].trim();
+        if (!line) {
+          continue;
+        }
+        try {
+          rows.push(JSON.parse(line));
+        } catch (error) {
+          throw new Error(`Line ${i + 1}: ${error.message}`);
+        }
+      }
+      return rows;
+    }
+
+    function normalizeRow(row) {
+      return {
+        id: row.id || "(unknown)",
+        tags: Array.isArray(row.tags) ? row.tags : [],
+        messages: Array.isArray(row.messages) ? row.messages : [],
+        response: String(row.response || ""),
+      };
+    }
+
+    function loadFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const rows = parseJsonl(String(reader.result || "")).map(normalizeRow);
+            resolve({
+              id: `${inferRunLabel(file)}-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+              label: inferRunLabel(file),
+              fileName: file.name,
+              loadedAt: new Date().toLocaleString(),
+              rows,
+            });
+          } catch (error) {
+            reject(new Error(`${file.name}: ${error.message}`));
+          }
+        };
+        reader.onerror = () => reject(new Error(`${file.name}: failed to read file`));
+        reader.readAsText(file, "utf-8");
+      });
+    }
+
+    function activeRun() {
+      return state.runs.find((run) => run.id === state.activeRunId) || null;
+    }
+
+    function searchableText(row) {
+      const messageText = row.messages.map((message) => `${message.role || ""} ${message.content || ""}`).join(" ");
+      return `${row.id} ${row.tags.join(" ")} ${messageText} ${row.response}`.toLowerCase();
+    }
+
+    function filteredRows() {
+      const run = activeRun();
+      if (!run) {
+        return [];
+      }
+
+      const query = state.query.trim().toLowerCase();
+      return run.rows.filter((row) => {
+        if (state.promptId !== "all" && row.id !== state.promptId) {
+          return false;
+        }
+        if (!query) {
+          return true;
+        }
+        return searchableText(row).includes(query);
+      });
+    }
+
+    function updateStatus(message, isError) {
+      const status = document.getElementById("status");
+      status.textContent = message;
+      status.style.background = isError ? "#fff1f1" : "#eef4ff";
+      status.style.color = isError ? "#9f2d2d" : "#23436c";
+    }
+
+    function renderControls() {
+      const runSelect = document.getElementById("runSelect");
+      const promptSelect = document.getElementById("promptSelect");
+      const searchInput = document.getElementById("searchInput");
+      const clearButton = document.getElementById("clearButton");
+
+      runSelect.disabled = state.runs.length === 0;
+      promptSelect.disabled = state.runs.length === 0;
+      searchInput.disabled = state.runs.length === 0;
+      clearButton.disabled = state.runs.length === 0;
+
+      runSelect.innerHTML = state.runs.length
+        ? state.runs.map((run) => `<option value="${escapeHtml(run.id)}">${escapeHtml(run.label)} (${run.rows.length})</option>`).join("")
+        : '<option value="">No runs loaded</option>';
+
+      if (state.activeRunId) {
+        runSelect.value = state.activeRunId;
+      }
+
+      const run = activeRun();
+      const promptIds = run ? ["all"].concat(run.rows.map((row) => row.id)) : ["all"];
+      promptSelect.innerHTML = promptIds
+        .map((promptId) => {
+          const label = promptId === "all" ? "All prompts" : promptId;
+          return `<option value="${escapeHtml(promptId)}">${escapeHtml(label)}</option>`;
+        })
+        .join("");
+      promptSelect.value = state.promptId;
+
+      document.getElementById("sourceFile").textContent = run ? run.fileName : "-";
+      document.getElementById("rowCount").textContent = run ? String(run.rows.length) : "-";
+      document.getElementById("loadedAt").textContent = run ? run.loadedAt : "-";
+    }
+
+    function renderRows() {
+      const list = document.getElementById("list");
+      const run = activeRun();
+      if (!run) {
+        list.innerHTML = '<div class="empty">Load a <code>fixed_prompts.jsonl</code> file to start browsing.</div>';
+        return;
+      }
+
+      const rows = filteredRows();
+      if (!rows.length) {
+        list.innerHTML = '<div class="empty">No prompts matched the current filters.</div>';
+        return;
+      }
+
+      list.innerHTML = rows.map((row) => `
+        <article class="card">
+          <div class="card-head">
+            <div>
+              <h2 class="card-title">${escapeHtml(row.id)}</h2>
+            </div>
+            <div class="file-badge">${escapeHtml(run.label)}</div>
+          </div>
+
+          <div class="tags">
+            ${row.tags.map((tag) => `<span class="tag">${escapeHtml(tag)}</span>`).join("")}
+          </div>
+
+          <div class="section-title">Messages</div>
+          <div class="message-list">
+            ${row.messages.map((message) => `
+              <div class="message ${escapeHtml(message.role || "unknown")}">
+                <div class="message-role">${escapeHtml(message.role || "unknown")}</div>
+                <pre>${escapeHtml(message.content || "")}</pre>
+              </div>
+            `).join("")}
+          </div>
+
+          <div class="section-title">Response</div>
+          <div class="response"><pre>${escapeHtml(row.response)}</pre></div>
+        </article>
+      `).join("");
+    }
+
+    function render() {
+      renderControls();
+      renderRows();
+    }
+
+    async function handleFiles(fileList) {
+      const files = Array.from(fileList || []).filter((file) => file.name.endsWith(".jsonl") || file.name.endsWith(".json"));
+      if (!files.length) {
+        updateStatus("Please choose at least one .jsonl file.", true);
+        return;
+      }
+
+      try {
+        const runs = await Promise.all(files.map(loadFile));
+        state.runs = runs;
+        state.activeRunId = runs[0].id;
+        state.promptId = "all";
+        state.query = "";
+        document.getElementById("searchInput").value = "";
+        updateStatus(`Loaded ${runs.length} file(s).`, false);
+        render();
+      } catch (error) {
+        updateStatus(error.message, true);
+      }
+    }
+
+    document.getElementById("fileInput").addEventListener("change", (event) => {
+      handleFiles(event.target.files);
+    });
+
+    document.getElementById("runSelect").addEventListener("change", (event) => {
+      state.activeRunId = event.target.value;
+      state.promptId = "all";
+      render();
+    });
+
+    document.getElementById("promptSelect").addEventListener("change", (event) => {
+      state.promptId = event.target.value;
+      renderRows();
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (event) => {
+      state.query = event.target.value;
+      renderRows();
+    });
+
+    document.getElementById("clearButton").addEventListener("click", () => {
+      state.runs = [];
+      state.activeRunId = "";
+      state.promptId = "all";
+      state.query = "";
+      document.getElementById("fileInput").value = "";
+      document.getElementById("searchInput").value = "";
+      updateStatus("No files loaded yet.", false);
+      render();
+    });
+
+    const dropZone = document.getElementById("dropZone");
+
+    ["dragenter", "dragover"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.add("dragover");
+      });
+    });
+
+    ["dragleave", "drop"].forEach((eventName) => {
+      dropZone.addEventListener(eventName, (event) => {
+        event.preventDefault();
+        dropZone.classList.remove("dragover");
+      });
+    });
+
+    dropZone.addEventListener("drop", (event) => {
+      handleFiles(event.dataTransfer.files);
+    });
+  </script>
+</body>
+</html>

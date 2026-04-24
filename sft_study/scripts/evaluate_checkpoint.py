@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -100,8 +101,8 @@ def resolve_context(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def run_command(command: list[str], dry_run: bool) -> None:
+    print(f"$ {shlex.join(command)}")
     if dry_run:
-        print(json.dumps({"dry_run_command": command}, ensure_ascii=False))
         return
     subprocess.run(command, check=True)
 
