@@ -15,7 +15,7 @@ from debug_single_fixed_prompt import inspect_top_k_next_tokens, load_checkpoint
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="对比 base model 和 checkpoint 在同一条 fixed prompt 上的 eos_rank / eos_logit。"
+        description="对比 base model 和 checkpoint 在同一条 fixed prompt 上的 native eos 与固定 stop token 倾向。"
     )
     parser.add_argument("--checkpoint_dir", required=True, help="SFT 输出目录；会自动读取 run_config.json。")
     parser.add_argument("--base_model_name_or_path", default=None, help="可选 base model；不填默认用 run_config.json 里的底模。")
@@ -74,6 +74,26 @@ def load_tokenizer(tokenizer_name_or_path: str, default_system_prompt: str, revi
     return tokenizer
 
 
+def build_tracked_token_ids(tokenizer: Any) -> dict[str, int | None]:
+    return {
+        "native_eos": tokenizer.eos_token_id,
+        "im_end": tokenizer.convert_tokens_to_ids("<|im_end|>"),
+        "endoftext": tokenizer.convert_tokens_to_ids("<|endoftext|>"),
+    }
+
+
+def summarize_tokenizer(tokenizer: Any, tracked_token_ids: dict[str, int | None]) -> dict[str, Any]:
+    return {
+        "name_or_path": getattr(tokenizer, "name_or_path", None),
+        "eos_token": tokenizer.eos_token,
+        "eos_token_id": tokenizer.eos_token_id,
+        "pad_token": tokenizer.pad_token,
+        "pad_token_id": tokenizer.pad_token_id,
+        "im_end_token_id": tracked_token_ids["im_end"],
+        "endoftext_token_id": tracked_token_ids["endoftext"],
+    }
+
+
 def load_model(
     model_name_or_path: str,
     adapter_path: str | None,
@@ -124,6 +144,7 @@ def run_case(
         revision=args.revision,
         trust_remote_code=args.trust_remote_code,
     )
+    tracked_token_ids = build_tracked_token_ids(tokenizer)
     model = load_model(
         model_name_or_path=model_name_or_path,
         adapter_path=adapter_path,
@@ -164,6 +185,7 @@ def run_case(
         prompt_length=prompt_length,
         inspect_steps=args.inspect_steps,
         top_k=args.top_k,
+        tracked_token_ids=tracked_token_ids,
     )
 
     return {
@@ -171,10 +193,39 @@ def run_case(
         "model_name_or_path": model_name_or_path,
         "adapter_path": adapter_path,
         "tokenizer_name_or_path": tokenizer_name_or_path,
+        "tokenizer": summarize_tokenizer(tokenizer, tracked_token_ids),
         "clean_completion": tokenizer.decode(completion_ids, skip_special_tokens=True).strip(),
         "completion_token_count": len(completion_ids_list),
-        "eos_token_positions": token_positions(completion_ids_list, tokenizer.eos_token_id),
+        "native_eos_token_positions": token_positions(completion_ids_list, tracked_token_ids["native_eos"]),
+        "im_end_token_positions": token_positions(completion_ids_list, tracked_token_ids["im_end"]),
+        "endoftext_token_positions": token_positions(completion_ids_list, tracked_token_ids["endoftext"]),
         "top_k_next_tokens": top_k_debug,
+    }
+
+
+def summarize_tracked_tokens(step: dict[str, Any]) -> dict[str, Any]:
+    tracked = step.get("tracked_tokens", {})
+    return {
+        "native_eos": tracked.get("native_eos"),
+        "im_end": tracked.get("im_end"),
+        "endoftext": tracked.get("endoftext"),
+    }
+
+
+def build_tracked_delta(
+    base_step: dict[str, Any],
+    checkpoint_step: dict[str, Any],
+    token_name: str,
+) -> dict[str, Any]:
+    base_token = base_step.get("tracked_tokens", {}).get(token_name, {})
+    checkpoint_token = checkpoint_step.get("tracked_tokens", {}).get(token_name, {})
+    base_rank = base_token.get("rank")
+    checkpoint_rank = checkpoint_token.get("rank")
+    base_logit = base_token.get("logit")
+    checkpoint_logit = checkpoint_token.get("logit")
+    return {
+        "rank": None if base_rank is None or checkpoint_rank is None else checkpoint_rank - base_rank,
+        "logit": None if base_logit is None or checkpoint_logit is None else round(checkpoint_logit - base_logit, 6),
     }
 
 
@@ -191,23 +242,27 @@ def build_step_comparison(base_case: dict[str, Any], checkpoint_case: dict[str, 
                 "step": step,
                 "base": {
                     "chosen_piece": base_step["chosen_piece"],
-                    "chosen_is_eos": base_step["chosen_is_eos"],
-                    "eos_rank": base_step["eos_rank"],
-                    "eos_logit": base_step["eos_logit"],
+                    "chosen_is_native_eos": base_step["chosen_is_eos"],
+                    "native_eos_rank": base_step["eos_rank"],
+                    "native_eos_logit": base_step["eos_logit"],
+                    "tracked_tokens": summarize_tracked_tokens(base_step),
                 },
                 "checkpoint": {
                     "chosen_piece": checkpoint_step["chosen_piece"],
-                    "chosen_is_eos": checkpoint_step["chosen_is_eos"],
-                    "eos_rank": checkpoint_step["eos_rank"],
-                    "eos_logit": checkpoint_step["eos_logit"],
+                    "chosen_is_native_eos": checkpoint_step["chosen_is_eos"],
+                    "native_eos_rank": checkpoint_step["eos_rank"],
+                    "native_eos_logit": checkpoint_step["eos_logit"],
+                    "tracked_tokens": summarize_tracked_tokens(checkpoint_step),
                 },
                 "delta": {
-                    "eos_rank": None
+                    "native_eos_rank": None
                     if base_step["eos_rank"] is None or checkpoint_step["eos_rank"] is None
                     else checkpoint_step["eos_rank"] - base_step["eos_rank"],
-                    "eos_logit": None
+                    "native_eos_logit": None
                     if base_step["eos_logit"] is None or checkpoint_step["eos_logit"] is None
                     else round(checkpoint_step["eos_logit"] - base_step["eos_logit"], 6),
+                    "im_end": build_tracked_delta(base_step, checkpoint_step, "im_end"),
+                    "endoftext": build_tracked_delta(base_step, checkpoint_step, "endoftext"),
                 },
             }
         )
@@ -263,8 +318,11 @@ def main() -> None:
         {
             "model_name_or_path": base_case["model_name_or_path"],
             "tokenizer_name_or_path": base_case["tokenizer_name_or_path"],
+            "tokenizer": base_case["tokenizer"],
             "completion_token_count": base_case["completion_token_count"],
-            "eos_token_positions": base_case["eos_token_positions"],
+            "native_eos_token_positions": base_case["native_eos_token_positions"],
+            "im_end_token_positions": base_case["im_end_token_positions"],
+            "endoftext_token_positions": base_case["endoftext_token_positions"],
             "clean_completion": base_case["clean_completion"],
         },
         ensure_ascii=False,
@@ -277,8 +335,11 @@ def main() -> None:
             "model_name_or_path": checkpoint_case["model_name_or_path"],
             "adapter_path": checkpoint_case["adapter_path"],
             "tokenizer_name_or_path": checkpoint_case["tokenizer_name_or_path"],
+            "tokenizer": checkpoint_case["tokenizer"],
             "completion_token_count": checkpoint_case["completion_token_count"],
-            "eos_token_positions": checkpoint_case["eos_token_positions"],
+            "native_eos_token_positions": checkpoint_case["native_eos_token_positions"],
+            "im_end_token_positions": checkpoint_case["im_end_token_positions"],
+            "endoftext_token_positions": checkpoint_case["endoftext_token_positions"],
             "clean_completion": checkpoint_case["clean_completion"],
         },
         ensure_ascii=False,

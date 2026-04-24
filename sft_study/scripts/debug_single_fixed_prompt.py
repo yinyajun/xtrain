@@ -98,6 +98,14 @@ def decode_token_piece(tokenizer: Any, token_id: int) -> str:
     return tokenizer.decode([token_id], skip_special_tokens=False).replace("\n", "\\n")
 
 
+def compute_token_rank_and_logit(step_logits: Any, token_id: int | None) -> tuple[int | None, float | None]:
+    if token_id is None:
+        return None, None
+    token_logit = float(step_logits[token_id].item())
+    higher_than_token = int((step_logits > step_logits[token_id]).sum().item())
+    return higher_than_token + 1, token_logit
+
+
 def inspect_top_k_next_tokens(
     model: Any,
     tokenizer: Any,
@@ -105,6 +113,7 @@ def inspect_top_k_next_tokens(
     prompt_length: int,
     inspect_steps: int,
     top_k: int,
+    tracked_token_ids: dict[str, int | None] | None = None,
 ) -> list[dict[str, Any]]:
     import torch
 
@@ -126,9 +135,7 @@ def inspect_top_k_next_tokens(
         chosen_index = prompt_length + step
         chosen_token_id = full_ids[chosen_index]
         step_logits = logits[source_index]
-        eos_logit = float(step_logits[eos_token_id].item()) if eos_token_id is not None else None
-        higher_than_eos = int((step_logits > step_logits[eos_token_id]).sum().item()) if eos_token_id is not None else None
-        eos_rank = higher_than_eos + 1 if higher_than_eos is not None else None
+        eos_rank, eos_logit = compute_token_rank_and_logit(step_logits, eos_token_id)
         top_values, top_indices = torch.topk(step_logits, k=min(top_k, step_logits.shape[-1]))
         candidates = []
         for rank, (candidate_id, logit_value) in enumerate(
@@ -146,6 +153,17 @@ def inspect_top_k_next_tokens(
                 }
             )
 
+        tracked_tokens: dict[str, Any] = {}
+        for name, token_id in (tracked_token_ids or {}).items():
+            tracked_rank, tracked_logit = compute_token_rank_and_logit(step_logits, token_id)
+            tracked_tokens[name] = {
+                "token_id": token_id,
+                "piece": decode_token_piece(tokenizer, token_id) if token_id is not None else None,
+                "rank": tracked_rank,
+                "logit": round(tracked_logit, 6) if tracked_logit is not None else None,
+                "is_chosen": token_id == chosen_token_id if token_id is not None else False,
+            }
+
         summaries.append(
             {
                 "step": step,
@@ -157,6 +175,7 @@ def inspect_top_k_next_tokens(
                 "chosen_is_eos": chosen_token_id == tokenizer.eos_token_id,
                 "eos_rank": eos_rank,
                 "eos_logit": round(eos_logit, 6) if eos_logit is not None else None,
+                "tracked_tokens": tracked_tokens,
                 "top_k": candidates,
             }
         )
