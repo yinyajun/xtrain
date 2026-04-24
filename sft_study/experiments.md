@@ -41,6 +41,7 @@ sft_study/
     e1_no_robots_smoke.sh
     e1_no_robots_full.sh
     e2_prepare_ultrachat_token_match.sh
+    e2_no_robots_matched.sh
     e2_ultrachat_matched.sh
     e3_smol_magpie_20k.sh
     e4a_smol_constraints.sh
@@ -52,7 +53,7 @@ sft_study/
 辅助脚本现在统一成两类入口：
 
 - `scripts/dataset_tools.py`
-  负责数据准备，子命令是 `mix` 和 `token-match`
+  负责数据准备，子命令是 `mix`、`token-match` 和 `holdout-split`
 - `scripts/inspect_model.py`
   负责诊断检查，子命令是 `special-tokens` 和 `chat-template`
 
@@ -269,12 +270,20 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 脚本：
 
 - 先准备对齐子集：`runs/e2_prepare_ultrachat_token_match.sh`
-- 再训练：`runs/e2_ultrachat_matched.sh`
+- A 组训练：`runs/e2_no_robots_matched.sh`
+- B 组训练：`runs/e2_ultrachat_matched.sh`
+
+额外控制：
+
+- 两组都固定成 `1 epoch`
+- `UltraChat` 子集按 `No Robots 9500` 的 token budget 对齐
+- 对照时不要拿 `E1 full` 直接和 `E2 UltraChat` 比
 
 运行命令：
 
 ```bash
 bash sft_study/runs/e2_prepare_ultrachat_token_match.sh
+bash sft_study/runs/e2_no_robots_matched.sh
 bash sft_study/runs/e2_ultrachat_matched.sh
 ```
 
@@ -282,6 +291,8 @@ bash sft_study/runs/e2_ultrachat_matched.sh
 
 ```bash
 bash sft_study/runs/e2_prepare_ultrachat_token_match.sh
+REPORT_TO=wandb WANDB_PROJECT=sft-study \
+  bash sft_study/runs/e2_no_robots_matched.sh
 REPORT_TO=wandb WANDB_PROJECT=sft-study \
   bash sft_study/runs/e2_ultrachat_matched.sh
 ```
@@ -345,13 +356,15 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 - 固定一个主干数据 `smol-magpie-ultra`
 - 每次只加一种切片
+- 新增切片先按 token budget 对齐到 `5k smol-magpie-ultra`
+- train-time eval 统一看 `smol-magpie-ultra/test`，避免每个实验换 eval 集
 
 ### E4a：加约束遵循
 
 数据混合：
 
 - `smol-magpie-ultra` 15k
-- `smol-constraints` 5k
+- `smol-constraints` token-matched 到 `5k smol-magpie-ultra`
 
 脚本：
 
@@ -372,6 +385,7 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 关注：
 
+- 公共 eval loss 是否稳定
 - `IFEval`
 - 固定 prompt 里的格式、长度、关键词约束
 
@@ -380,7 +394,7 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 数据混合：
 
 - `smol-magpie-ultra` 15k
-- `systemchats-30k` 5k
+- `systemchats-30k` token-matched 到 `5k smol-magpie-ultra`
 
 脚本：
 
@@ -401,6 +415,7 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 关注：
 
+- 公共 eval loss 是否稳定
 - system 约束是否更稳
 - 多轮中是否更能记住前置设定
 
@@ -409,7 +424,7 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 数据混合：
 
 - `smol-magpie-ultra` 15k
-- `numina-cot-100k` 5k
+- `numina-cot-100k` token-matched 到 `5k smol-magpie-ultra`
 
 脚本：
 
@@ -430,6 +445,7 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 关注：
 
+- 公共 eval loss 是否稳定
 - `GSM8K`
 - 固定 prompt 里的推理完整度
 
@@ -463,6 +479,7 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 建议做法：
 
 - 先只抽 `100k`
+- 先从同一个 `train` split 里切一份本地 held-out eval，再训练
 - 不要第一轮就尝试整套 90 多万
 
 主要观察：
@@ -474,6 +491,7 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 ## 你每次都要记下来的东西
 
 - 用的模型和数据
+- `seed`
 - token budget
 - 训练步数
 - train/eval loss 的形状
@@ -481,13 +499,19 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 - 一句话结论：
   这次学到的是“模型更会做任务了”，还是“模型只是更像助手了”
 
+关键对照实验建议至少补到 `3` 个 seed：
+
+- `E2` 的 `No Robots matched vs UltraChat matched`
+- `E4` 任意一个切片实验
+- `E5` 的 recipe mixture
+
 ## 启动建议
 
 第一次建议只跑这三个：
 
 1. `runs/e0_fixed_prompts_base.sh`
 2. `runs/e1_no_robots_smoke.sh`
-3. `runs/e2_prepare_ultrachat_token_match.sh && runs/e2_ultrachat_matched.sh`
+3. `runs/e2_prepare_ultrachat_token_match.sh && runs/e2_no_robots_matched.sh && runs/e2_ultrachat_matched.sh`
 
 这样你会最快建立两个核心直觉：
 

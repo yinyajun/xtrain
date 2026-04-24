@@ -164,8 +164,63 @@ def run_token_match(args: argparse.Namespace) -> None:
     )
 
 
+def run_holdout_split(args: argparse.Namespace) -> None:
+    ensure_packages()
+
+    dataset = load_dataset_split(args.dataset, args.dataset_config, args.split)
+    dataset = maybe_filter_dataset(dataset, args.filter_field, args.filter_values)
+    dataset = maybe_sample_dataset(dataset, args.max_samples, args.seed)
+
+    ensure_messages_column(dataset, args.dataset, args.messages_field)
+
+    if args.eval_samples <= 0:
+        raise ValueError("--eval_samples must be a positive integer.")
+    if len(dataset) <= args.eval_samples:
+        raise ValueError(
+            f"Need more rows than eval_samples to build a holdout split. "
+            f"Got rows={len(dataset)} eval_samples={args.eval_samples}."
+        )
+
+    dataset = dataset.shuffle(seed=args.seed)
+    eval_dataset = dataset.select(range(args.eval_samples))
+    train_dataset = dataset.select(range(args.eval_samples, len(dataset)))
+
+    train_output_jsonl = Path(args.train_output_jsonl)
+    eval_output_jsonl = Path(args.eval_output_jsonl)
+    write_jsonl(train_output_jsonl, train_dataset.to_list())
+    write_jsonl(eval_output_jsonl, eval_dataset.to_list())
+    save_json(
+        train_output_jsonl.with_suffix(".split_stats.json"),
+        {
+            "dataset": args.dataset,
+            "dataset_config": args.dataset_config,
+            "split": args.split,
+            "seed": args.seed,
+            "messages_field": args.messages_field,
+            "source_rows": len(dataset),
+            "train_rows": len(train_dataset),
+            "eval_rows": len(eval_dataset),
+            "filter_field": args.filter_field,
+            "filter_values": args.filter_values,
+            "train_output_jsonl": str(train_output_jsonl),
+            "eval_output_jsonl": str(eval_output_jsonl),
+        },
+    )
+    print(
+        json.dumps(
+            {
+                "train_output_jsonl": str(train_output_jsonl),
+                "eval_output_jsonl": str(eval_output_jsonl),
+                "train_rows": len(train_dataset),
+                "eval_rows": len(eval_dataset),
+            },
+            indent=2,
+        )
+    )
+
+
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="统一的数据准备工具，包含数据混合和 token budget 对齐两类子命令。")
+    parser = argparse.ArgumentParser(description="统一的数据准备工具，包含数据混合、token budget 对齐和 holdout 切分。")
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     mix_parser = subparsers.add_parser("mix", help="把多个 SFT 数据切片混合成一份 JSONL。")
@@ -204,6 +259,23 @@ def build_parser() -> argparse.ArgumentParser:
     token_match_parser.add_argument("--seed", type=int, default=42, help="候选数据集 shuffle 的随机种子。")
     token_match_parser.add_argument("--output_jsonl", required=True, help="输出的 token 对齐子集路径。")
     token_match_parser.set_defaults(handler=run_token_match)
+
+    holdout_parser = subparsers.add_parser(
+        "holdout-split",
+        help="从单个 split 切出一份本地 held-out train/eval JSONL。",
+    )
+    holdout_parser.add_argument("--dataset", required=True, help="源数据集名称或本地路径。")
+    holdout_parser.add_argument("--dataset_config", default=None, help="源数据集的 config 名称。")
+    holdout_parser.add_argument("--split", default="train", help="要切分的源 split。")
+    holdout_parser.add_argument("--max_samples", type=int, default=None, help="切分前最多读取多少条。")
+    holdout_parser.add_argument("--eval_samples", type=int, required=True, help="held-out eval 集样本数。")
+    holdout_parser.add_argument("--messages_field", default="messages", help="对话字段名。")
+    holdout_parser.add_argument("--filter_field", default=None, help="可选过滤字段。")
+    holdout_parser.add_argument("--filter_values", nargs="*", default=None, help="过滤字段允许的值列表。")
+    holdout_parser.add_argument("--seed", type=int, default=42, help="切分时使用的随机种子。")
+    holdout_parser.add_argument("--train_output_jsonl", required=True, help="输出的 train jsonl 路径。")
+    holdout_parser.add_argument("--eval_output_jsonl", required=True, help="输出的 eval jsonl 路径。")
+    holdout_parser.set_defaults(handler=run_holdout_split)
 
     return parser
 

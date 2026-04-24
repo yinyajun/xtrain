@@ -29,11 +29,19 @@ CMD=(
   --eval_steps 100 \
   --save_steps 100 \
   --save_total_limit 2 \
+  --max_length 2048 \
   --learning_rate 1e-4 \
+  --lr_scheduler_type cosine \
   --warmup_ratio 0.03 \
   --weight_decay 0.01 \
+  --quantization auto \
+  --lora_r 16 \
+  --lora_alpha 32 \
+  --lora_dropout 0.05 \
+  --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj \
   --report_to "$REPORT_TO" \
-  --gradient_checkpointing
+  --gradient_checkpointing \
+  --seed 42
 )
 
 if [[ -n "$ATTN_IMPLEMENTATION" ]]; then

@@ -7,34 +7,27 @@ MODEL="${MODEL:-Qwen/Qwen2.5-7B}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-}"
 REPORT_TO="${REPORT_TO:-none}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
-TRAIN_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_train.jsonl"
-EVAL_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_eval.jsonl"
-
-"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_tools.py" holdout-split \
-  --dataset "allenai/tulu-3-sft-mixture" \
-  --split "train" \
-  --max_samples 101000 \
-  --eval_samples 1000 \
-  --seed 42 \
-  --train_output_jsonl "$TRAIN_JSONL" \
-  --eval_output_jsonl "$EVAL_JSONL"
 
 CMD=(
   "$PYTHON_BIN" "$ROOT_DIR/scripts/train_sft.py"
   --model_name_or_path "$MODEL" \
-  --train_dataset "$TRAIN_JSONL" \
-  --train_split "train" \
-  --eval_dataset "$EVAL_JSONL" \
-  --eval_split "train" \
-  --output_dir "$ROOT_DIR/outputs/e5_tulu3_100k" \
-  --run_name "e5_tulu3_100k" \
+  --train_dataset "HuggingFaceH4/no_robots" \
+  --train_dataset_config "" \
+  --train_split "train_sft" \
+  --eval_dataset "HuggingFaceH4/no_robots" \
+  --eval_dataset_config "" \
+  --eval_split "test_sft" \
+  --output_dir "$ROOT_DIR/outputs/e2_no_robots_matched" \
+  --run_name "e2_no_robots_matched" \
+  --max_train_samples 9500 \
+  --max_eval_samples 500 \
   --num_train_epochs 1 \
   --per_device_train_batch_size 2 \
   --per_device_eval_batch_size 4 \
   --gradient_accumulation_steps 16 \
   --logging_steps 10 \
-  --eval_steps 200 \
-  --save_steps 200 \
+  --eval_steps 100 \
+  --save_steps 100 \
   --save_total_limit 2 \
   --max_length 2048 \
   --learning_rate 1e-4 \
