@@ -58,8 +58,8 @@ CMD=(
   --warmup_ratio 0.03 \
   --weight_decay 0.01 \
   --quantization auto \
-  --lora_r 16 \
-  --lora_alpha 32 \
+  --lora_r 32 \
+  --lora_alpha 64 \
   --lora_dropout 0.05 \
   --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj \
   --report_to "$REPORT_TO" \

@@ -41,7 +41,7 @@ CMD=(
   --lora_r 32 \
   --lora_alpha 64 \
   --lora_dropout 0.05 \
-  --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj lm_head \
+  --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj \
   --report_to "$REPORT_TO" \
   --gradient_checkpointing \
   --seed 42
