@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON_BIN="${PYTHON_BIN:-python3}"
 MODEL="${MODEL:-Qwen/Qwen2.5-7B}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-}"
+CHAT_TEMPLATE_PATH="${CHAT_TEMPLATE_PATH:-$ROOT_DIR/chat_templates/qwen2_5_training.jinja}"
 REPORT_TO="${REPORT_TO:-none}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e2_no_robots_matched"
@@ -12,6 +13,7 @@ OUTPUT_DIR="$ROOT_DIR/outputs/e2_no_robots_matched"
 CMD=(
   "$PYTHON_BIN" "$ROOT_DIR/scripts/train_sft.py"
   --model_name_or_path "$MODEL" \
+  --chat_template_path "$CHAT_TEMPLATE_PATH" \
   --train_dataset "HuggingFaceH4/no_robots" \
   --train_dataset_config "" \
   --train_split "train_sft" \

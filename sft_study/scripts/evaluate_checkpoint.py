@@ -11,7 +11,7 @@ from typing import Any
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from common import DEFAULT_SYSTEM_PROMPT, save_json
+from common import save_json
 
 
 DEFAULT_BENCHMARKS = ["ifeval", "gsm8k", "mmlu", "cmmlu"]
@@ -34,20 +34,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch_size", default="auto", help="评估 batch size。")
     parser.add_argument("--dtype", default=None, help="可选推理 dtype。")
     parser.add_argument("--attn_implementation", default=None, help="可选注意力实现，例如 flash_attention_2。")
-    parser.add_argument("--default_system_prompt", default=DEFAULT_SYSTEM_PROMPT, help="统一覆盖 chat template 里的默认 system prompt。")
-    parser.add_argument("--revision", default=None, help="模型 revision。")
-    parser.add_argument("--trust_remote_code", action="store_true", help="是否允许 remote code。")
-    parser.add_argument("--load_in_4bit", action="store_true", help="是否以 4-bit 方式加载模型。")
     parser.add_argument("--limit", default=None, help="可选 benchmark limit。")
     parser.add_argument("--max_new_tokens", type=int, default=256, help="固定 prompt 生成时的最大新 token 数。")
     parser.add_argument("--temperature", type=float, default=0.0, help="固定 prompt 生成温度。")
     parser.add_argument("--top_p", type=float, default=1.0, help="固定 prompt 生成的 top_p。")
-    parser.add_argument("--think_end_token", default=None, help="模型思维链终止 token。")
     parser.add_argument("--skip_fixed_prompts", action="store_true", help="跳过固定 prompt 生成。")
     parser.add_argument("--skip_benchmarks", action="store_true", help="跳过 benchmark 评估。")
     parser.add_argument("--log_samples", action="store_true", help="让 lm-eval 输出样本级日志。")
-    parser.add_argument("--extra_model_arg", action="append", default=[], help="额外透传给 model_args 的参数。")
-    parser.add_argument("--extra_eval_arg", action="append", default=[], help="额外透传给 lm-eval 的参数。")
     parser.add_argument("--dry_run", action="store_true", help="只打印子命令，不真正执行。")
     return parser.parse_args()
 
@@ -125,12 +118,7 @@ def main() -> None:
         "batch_size": args.batch_size,
         "dtype": args.dtype,
         "attn_implementation": args.attn_implementation,
-        "default_system_prompt": args.default_system_prompt,
-        "revision": args.revision,
-        "trust_remote_code": args.trust_remote_code,
-        "load_in_4bit": args.load_in_4bit,
         "limit": args.limit,
-        "think_end_token": args.think_end_token,
     }
     save_json(output_dir / "evaluation_config.json", evaluation_config)
 
@@ -138,7 +126,7 @@ def main() -> None:
     if not args.skip_fixed_prompts:
         fixed_prompt_command = [
             sys.executable,
-            str(scripts_dir / "generate_fixed_prompts.py"),
+            str(scripts_dir / "generate.py"),
             "--model_name_or_path",
             context["model_name_or_path"],
             "--tokenizer_name_or_path",
@@ -153,8 +141,6 @@ def main() -> None:
             str(args.temperature),
             "--top_p",
             str(args.top_p),
-            "--default_system_prompt",
-            args.default_system_prompt,
         ]
         if args.attn_implementation:
             fixed_prompt_command.extend(["--attn_implementation", args.attn_implementation])
@@ -185,26 +171,12 @@ def main() -> None:
             benchmark_command.extend(["--dtype", args.dtype])
         if args.attn_implementation:
             benchmark_command.extend(["--attn_implementation", args.attn_implementation])
-        if args.default_system_prompt:
-            benchmark_command.extend(["--default_system_prompt", args.default_system_prompt])
-        if args.revision:
-            benchmark_command.extend(["--revision", args.revision])
-        if args.trust_remote_code:
-            benchmark_command.append("--trust_remote_code")
-        if args.load_in_4bit:
-            benchmark_command.append("--load_in_4bit")
         if args.limit is not None:
             benchmark_command.extend(["--limit", str(args.limit)])
-        if args.think_end_token:
-            benchmark_command.extend(["--think_end_token", args.think_end_token])
         if args.log_samples:
             benchmark_command.append("--log_samples")
         if args.dry_run:
             benchmark_command.append("--dry_run")
-        for value in args.extra_model_arg:
-            benchmark_command.extend(["--extra_model_arg", value])
-        for value in args.extra_eval_arg:
-            benchmark_command.extend(["--extra_eval_arg", value])
         run_command(benchmark_command, args.dry_run)
 
     print(json.dumps({"output_dir": str(output_dir)}, ensure_ascii=False, indent=2))

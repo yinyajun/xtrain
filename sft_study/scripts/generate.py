@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from common import DEFAULT_SYSTEM_PROMPT, apply_default_system_prompt_to_tokenizer, ensure_packages, read_jsonl
+from common import read_jsonl
 
 
 def parse_args() -> argparse.Namespace:
@@ -24,14 +24,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--temperature", type=float, default=0.0, help="采样温度；0 表示贪心解码。")
     parser.add_argument("--top_p", type=float, default=1.0, help="nucleus sampling 的 top_p。")
     parser.add_argument("--attn_implementation", default=None, help="可选注意力实现，例如 flash_attention_2。")
-    parser.add_argument("--default_system_prompt", default=DEFAULT_SYSTEM_PROMPT, help="统一覆盖 chat template 里的默认 system prompt。")
     parser.add_argument("--seed", type=int, default=42, help="随机种子。")
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    ensure_packages()
 
     import torch
     from peft import PeftModel
@@ -46,7 +44,6 @@ def main() -> None:
     tokenizer = AutoTokenizer.from_pretrained(tokenizer_source, use_fast=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-    apply_default_system_prompt_to_tokenizer(tokenizer, args.default_system_prompt)
 
     model_dtype = None
     if torch.cuda.is_available():

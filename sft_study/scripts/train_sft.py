@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import importlib.resources
 import json
 import sys
 from pathlib import Path
@@ -11,24 +10,12 @@ from typing import Any
 sys.path.append(str(Path(__file__).resolve().parent))
 
 from common import (
-    DEFAULT_SYSTEM_PROMPT,
-    apply_default_system_prompt_to_tokenizer,
-    ensure_packages,
+    _normalize_conversational_dataset,
     load_dataset_split,
     maybe_filter_dataset,
     maybe_sample_dataset,
     save_json,
 )
-
-GENERATION_BLOCK_MARKERS = ("{% generation %}", "{% endgeneration %}")
-TRAINING_TEMPLATE_FAMILY_ALIASES = {
-    "qwen2_5": ("qwen2.5", "qwen2_5"),
-    "qwen3": ("qwen3",),
-    "llama3": ("llama3", "llama-3"),
-    "gemma2": ("gemma2", "gemma-2"),
-    "gemma": ("gemma",),
-    "gpt_oss": ("gpt-oss", "gpt_oss"),
-}
 
 
 def parse_args() -> argparse.Namespace:
@@ -42,12 +29,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--tokenizer_name_or_path",
         default=None,
-        help="可选 tokenizer 路径。对 base 模型做 chat SFT 时，常用 instruct tokenizer/template 来保证模板训练兼容性。",
+        help="可选 tokenizer 路径。不填时默认复用 model_name_or_path。",
     )
     parser.add_argument(
-        "--default_system_prompt",
-        default=DEFAULT_SYSTEM_PROMPT,
-        help="当样本没有显式 system message 时，统一注入到 chat template 里的默认 system prompt。",
+        "--chat_template_path",
+        required=True,
+        help="显式指定训练用 chat template。可传本地 jinja 文件路径，或 TRL 支持的模板来源。",
     )
     parser.add_argument("--output_dir", required=True, help="训练输出目录，会写入 adapter、tokenizer 和配置。")
     parser.add_argument("--run_name", default=None, help="可选的实验名称，便于日志平台或输出目录识别。")
@@ -149,125 +136,13 @@ def _prepare_model_init_kwargs(args: argparse.Namespace, torch: Any, BitsAndByte
     return kwargs
 
 
-def _has_training_generation_blocks(chat_template: str | None) -> bool:
-    if not chat_template:
-        return False
-    return all(marker in chat_template for marker in GENERATION_BLOCK_MARKERS)
-
-
-def _load_trl_chat_template(template_name: str) -> str | None:
-    template_path = importlib.resources.files("trl").joinpath("chat_templates", template_name)
-    try:
-        return template_path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        return None
-
-
-def _infer_chat_template_family(
-        tokenizer: Any,
-        model_name_or_path: str,
-        tokenizer_name_or_path: str | None,
-) -> str | None:
-    candidates = [
-        model_name_or_path,
-        tokenizer_name_or_path or "",
-        getattr(tokenizer, "name_or_path", "") or "",
-        getattr(tokenizer, "chat_template", "") or "",
-    ]
-    normalized = " ".join(value.lower() for value in candidates)
-
-    for family, aliases in TRAINING_TEMPLATE_FAMILY_ALIASES.items():
-        if any(alias in normalized for alias in aliases):
-            return family
-    return None
-
-
-def _load_family_training_template(
-        tokenizer: Any,
-        model_name_or_path: str,
-        tokenizer_name_or_path: str | None,
-) -> tuple[str | None, str | None]:
-    family = _infer_chat_template_family(
-        tokenizer=tokenizer,
-        model_name_or_path=model_name_or_path,
-        tokenizer_name_or_path=tokenizer_name_or_path,
-    )
-    if family is None:
-        return None, None
-
-    template_name = f"{family}_training.jinja"
-    template = _load_trl_chat_template(template_name)
-    if template is None:
-        return None, None
-    return family, template
-
-
-def _ensure_training_compatible_chat_template(
-        tokenizer: Any,
-        model_name_or_path: str,
-        tokenizer_name_or_path: str | None,
-        assistant_only_loss: bool,
-        get_training_chat_template: Any,
-) -> str | None:
-    if not assistant_only_loss:
-        return None
-
-    current_chat_template = getattr(tokenizer, "chat_template", None)
-    if _has_training_generation_blocks(current_chat_template):
-        return "tokenizer_training_template"
-
-    try:
-        patched_chat_template = get_training_chat_template(tokenizer)
-    except ValueError:
-        patched_chat_template = None
-
-    if patched_chat_template:
-        tokenizer.chat_template = patched_chat_template
-        return "trl_auto_patch"
-
-    family, fallback_template = _load_family_training_template(
-        tokenizer=tokenizer,
-        model_name_or_path=model_name_or_path,
-        tokenizer_name_or_path=tokenizer_name_or_path,
-    )
-    if fallback_template:
-        # 有些 tokenizer 明明属于 TRL 已支持的 family，
-        # 但当前版本的自动识别仍可能失败。这里退回到官方 training template 文件。
-        tokenizer.chat_template = fallback_template
-        return f"trl_{family}_training_template"
-
-    raise ValueError(
-        "The tokenizer's chat template is not training-compatible for assistant_only_loss=True, "
-        "and no known training template override is available for this model family."
-    )
-
-
-def _normalize_conversational_dataset(dataset: Any, messages_field: str) -> Any:
-    if messages_field not in dataset.column_names:
-        raise ValueError(
-            f"Expected conversational column {messages_field!r}. "
-            f"Available columns: {', '.join(dataset.column_names)}"
-        )
-
-    if messages_field != "messages":
-        dataset = dataset.rename_column(messages_field, "messages")
-
-    extra_columns = [column for column in dataset.column_names if column != "messages"]
-    if extra_columns:
-        dataset = dataset.remove_columns(extra_columns)
-
-    return dataset
-
-
 def main() -> None:
     args = parse_args()
-    ensure_packages()
 
     import torch
     from peft import LoraConfig
     from transformers import AutoTokenizer, BitsAndBytesConfig
     from trl import SFTConfig, SFTTrainer
-    from trl.chat_template_utils import get_training_chat_template
 
     train_dataset = load_dataset_split(args.train_dataset, args.train_dataset_config, args.train_split)
     train_dataset = maybe_filter_dataset(train_dataset, args.filter_field, args.filter_values)
@@ -290,14 +165,9 @@ def main() -> None:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
-    chat_template_strategy = _ensure_training_compatible_chat_template(
-        tokenizer=tokenizer,
-        model_name_or_path=args.model_name_or_path,
-        tokenizer_name_or_path=args.tokenizer_name_or_path,
-        assistant_only_loss=args.assistant_only_loss,
-        get_training_chat_template=get_training_chat_template,
-    )
-    system_prompt_overridden = apply_default_system_prompt_to_tokenizer(tokenizer, args.default_system_prompt)
+    template_path = Path(args.chat_template_path)
+    if template_path.is_file():
+        tokenizer.chat_template = template_path.read_text(encoding="utf-8")
 
     model_init_kwargs = _prepare_model_init_kwargs(args, torch, BitsAndBytesConfig)
 
@@ -333,6 +203,7 @@ def main() -> None:
         max_length=args.max_length,
         packing=args.packing,
         assistant_only_loss=args.assistant_only_loss,
+        chat_template_path=args.chat_template_path,
         eos_token=args.eos_token,
         bf16=torch.cuda.is_available() and torch.cuda.is_bf16_supported(),
         fp16=torch.cuda.is_available() and not torch.cuda.is_bf16_supported(),
@@ -340,28 +211,19 @@ def main() -> None:
         model_init_kwargs=model_init_kwargs,
     )
 
-    metadata = {
-        "model_name_or_path": args.model_name_or_path,
-        "tokenizer_name_or_path": tokenizer_source,
-        "train_dataset": args.train_dataset,
-        "train_dataset_config": args.train_dataset_config,
-        "train_split": args.train_split,
-        "eval_dataset": eval_dataset_name,
-        "eval_dataset_config": eval_dataset_config,
-        "eval_split": args.eval_split,
-        "default_system_prompt": args.default_system_prompt,
-        "system_prompt_overridden": system_prompt_overridden,
-        "train_size": len(train_dataset),
-        "eval_size": len(eval_dataset),
-        "messages_field": "messages",
-        "quantization": args.quantization,
-        "assistant_only_loss": args.assistant_only_loss,
-        "report_to": args.report_to,
-        "eos_token": args.eos_token,
-        "chat_template_strategy": chat_template_strategy,
-        "dataset_columns_after_normalization": train_dataset.column_names,
-        "model_init_kwargs": {key: str(value) for key, value in model_init_kwargs.items()},
-    }
+    metadata = dict(vars(args))
+    metadata.update(
+        {
+            "tokenizer_name_or_path": tokenizer_source,
+            "eval_dataset": eval_dataset_name,
+            "eval_dataset_config": eval_dataset_config,
+            "train_size": len(train_dataset),
+            "eval_size": len(eval_dataset),
+            "messages_field": "messages",
+            "dataset_columns_after_normalization": train_dataset.column_names,
+            "model_init_kwargs": {key: str(value) for key, value in model_init_kwargs.items()},
+        }
+    )
     save_json(output_dir / "run_config.json", metadata)
 
     trainer = SFTTrainer(
@@ -375,7 +237,8 @@ def main() -> None:
 
     train_result = trainer.train()
     trainer.save_model()
-    tokenizer.save_pretrained(str(output_dir))
+    trained_processing_class = getattr(trainer, "processing_class", None) or tokenizer
+    trained_processing_class.save_pretrained(str(output_dir))
     save_json(output_dir / "train_result.json", train_result.metrics)
     print(json.dumps(train_result.metrics, indent=2))
 

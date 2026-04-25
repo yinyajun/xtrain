@@ -278,12 +278,12 @@ PY
 如果你想顺手排查 tokenizer / chat template / special tokens，也可以直接用统一诊断脚本：
 
 ```bash
-python sft_study/scripts/inspect_model.py special-tokens \
+python sft_study/scripts/debug/inspect_model.py special-tokens \
   --model_name_or_path Qwen/Qwen2.5-7B
 ```
 
 ```bash
-python sft_study/scripts/inspect_model.py chat-template \
+python sft_study/scripts/debug/inspect_model.py chat-template \
   --tokenizer_name_or_path Qwen/Qwen2.5-7B
 ```
 

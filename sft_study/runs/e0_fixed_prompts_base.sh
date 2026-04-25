@@ -7,7 +7,7 @@ MODEL="${MODEL:-Qwen/Qwen2.5-7B}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 
 CMD=(
-  "$PYTHON_BIN" "$ROOT_DIR/scripts/generate_fixed_prompts.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/generate.py"
   --model_name_or_path "$MODEL" \
   --prompts_file "$ROOT_DIR/data/fixed_prompts.jsonl" \
   --output_file "$ROOT_DIR/outputs/e0_base_fixed_prompts.jsonl" \

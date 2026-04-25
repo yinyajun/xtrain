@@ -11,9 +11,6 @@ from typing import Any
 sys.path.append(str(Path(__file__).resolve().parent))
 
 from common import (
-    DEFAULT_SYSTEM_PROMPT,
-    apply_default_system_prompt_to_tokenizer,
-    ensure_packages,
     load_dataset_split,
     maybe_filter_dataset,
     maybe_sample_dataset,
@@ -63,7 +60,6 @@ def render_token_ids(tokenizer: Any, messages: list[dict[str, Any]]) -> list[int
 
 
 def run_mix(args: argparse.Namespace) -> None:
-    ensure_packages()
     rows: list[dict[str, Any]] = []
     components_stats: list[dict[str, Any]] = []
 
@@ -94,11 +90,9 @@ def run_mix(args: argparse.Namespace) -> None:
 
 
 def run_token_match(args: argparse.Namespace) -> None:
-    ensure_packages()
     from transformers import AutoTokenizer
 
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path, use_fast=True)
-    apply_default_system_prompt_to_tokenizer(tokenizer, args.default_system_prompt)
 
     reference_dataset = load_dataset_split(args.reference_dataset, args.reference_dataset_config, args.reference_split)
     reference_dataset = maybe_sample_dataset(reference_dataset, args.reference_max_samples, args.seed)
@@ -165,8 +159,6 @@ def run_token_match(args: argparse.Namespace) -> None:
 
 
 def run_holdout_split(args: argparse.Namespace) -> None:
-    ensure_packages()
-
     dataset = load_dataset_split(args.dataset, args.dataset_config, args.split)
     dataset = maybe_filter_dataset(dataset, args.filter_field, args.filter_values)
     dataset = maybe_sample_dataset(dataset, args.max_samples, args.seed)
@@ -249,11 +241,6 @@ def build_parser() -> argparse.ArgumentParser:
     token_match_parser.add_argument("--candidate_split", default="train", help="候选数据集 split。")
     token_match_parser.add_argument("--candidate_max_samples", type=int, default=None, help="候选数据集最多读取多少条。")
     token_match_parser.add_argument("--messages_field", default="messages", help="对话字段名。")
-    token_match_parser.add_argument(
-        "--default_system_prompt",
-        default=DEFAULT_SYSTEM_PROMPT,
-        help="统一覆盖 chat template 里的默认 system prompt。",
-    )
     token_match_parser.add_argument("--max_length", type=int, default=2048, help="统计 token 时的截断长度上限。")
     token_match_parser.add_argument("--drop_overlong", action="store_true", help="是否直接丢弃超过 max_length 的样本。")
     token_match_parser.add_argument("--seed", type=int, default=42, help="候选数据集 shuffle 的随机种子。")
