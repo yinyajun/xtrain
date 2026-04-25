@@ -22,7 +22,7 @@ CMD=(
   --run_name "e1_no_robots_full" \
   --max_train_samples 9500 \
   --max_eval_samples 500 \
-  --num_train_epochs 1 \
+  --num_train_epochs 2 \
   --per_device_train_batch_size 2 \
   --per_device_eval_batch_size 4 \
   --gradient_accumulation_steps 16 \
@@ -39,7 +39,7 @@ CMD=(
   --lora_r 64 \
   --lora_alpha 128 \
   --lora_dropout 0.05 \
-  --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj lm_head\
+  --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj lm_head \
   --report_to "$REPORT_TO" \
   --gradient_checkpointing \
   --seed 42
