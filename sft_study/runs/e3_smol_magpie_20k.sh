@@ -8,7 +8,7 @@ TOKENIZER_PATH="${TOKENIZER_PATH:-}"
 CHAT_TEMPLATE_PATH="${CHAT_TEMPLATE_PATH:-$ROOT_DIR/chat_templates/qwen2_5_training.jinja}"
 REPORT_TO="${REPORT_TO:-none}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
-OUTPUT_DIR="$ROOT_DIR/outputs/e3_smol_magpie_50k"
+OUTPUT_DIR="$ROOT_DIR/outputs/e3_smol_magpie_20k"
 
 CMD=(
   "$PYTHON_BIN" "$ROOT_DIR/scripts/train_sft.py"
@@ -21,8 +21,8 @@ CMD=(
   --eval_dataset_config "smol-magpie-ultra" \
   --eval_split "test" \
   --output_dir "$OUTPUT_DIR" \
-  --run_name "e3_smol_magpie_50k" \
-  --max_train_samples 50000 \
+  --run_name "e3_smol_magpie_20k" \
+  --max_train_samples 20000 \
   --max_eval_samples 1000 \
   --num_train_epochs 1 \
   --per_device_train_batch_size 2 \
@@ -33,13 +33,13 @@ CMD=(
   --save_steps 100 \
   --save_total_limit 1 \
   --max_length 2048 \
-  --learning_rate 5e-5 \
+  --learning_rate 1e-4 \
   --lr_scheduler_type cosine \
   --warmup_ratio 0.03 \
   --weight_decay 0.01 \
   --quantization auto \
-  --lora_r 64 \
-  --lora_alpha 128 \
+  --lora_r 32 \
+  --lora_alpha 64 \
   --lora_dropout 0.05 \
   --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj lm_head \
   --report_to "$REPORT_TO" \
