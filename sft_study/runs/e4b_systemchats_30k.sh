@@ -46,7 +46,7 @@ CMD=(
   --max_eval_samples 1000 \
   --num_train_epochs 1 \
   --per_device_train_batch_size 2 \
-  --per_device_eval_batch_size 4 \
+  --per_device_eval_batch_size 2 \
   --gradient_accumulation_steps 16 \
   --logging_steps 10 \
   --eval_steps 100 \
