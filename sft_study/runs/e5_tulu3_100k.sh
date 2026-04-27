@@ -12,7 +12,7 @@ TRAIN_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_train.jsonl"
 EVAL_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_eval.jsonl"
 OUTPUT_DIR="$ROOT_DIR/outputs/e5_tulu3_100k"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_tools.py" holdout-split \
+"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_utils.py" holdout-split \
   --dataset "allenai/tulu-3-sft-mixture" \
   --split "train" \
   --max_samples 101000 \
@@ -64,6 +64,6 @@ fi
 
 "${CMD[@]}"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py" \
+"$PYTHON_BIN" "$ROOT_DIR/scripts/benchmark.py" \
   --checkpoint_dir "$OUTPUT_DIR" \
   --skip_benchmarks

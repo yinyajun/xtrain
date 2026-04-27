@@ -6,7 +6,7 @@ PYTHON_BIN="${PYTHON_BIN:-python3}"
 MODEL="${MODEL:-Qwen/Qwen2.5-7B}"
 SEED="${SEED:-42}"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_tools.py" token-match \
+"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_utils.py" token-match \
   --model_name_or_path "$MODEL" \
   --reference_dataset "HuggingFaceH4/no_robots" \
   --reference_split "train_sft" \

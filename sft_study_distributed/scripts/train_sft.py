@@ -38,6 +38,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--output_dir", required=True, help="训练输出目录，会写入 adapter、tokenizer 和配置。")
     parser.add_argument("--run_name", default=None, help="可选的实验名称，便于日志平台或输出目录识别。")
+    parser.add_argument("--deepspeed_config", default=None, help="可选 DeepSpeed 配置文件路径。")
 
     # 数据集入口：支持远程数据集和本地数据，train/eval 可以分别指定。
     parser.add_argument("--train_dataset", required=True, help="训练集名称或本地路径。")
@@ -183,6 +184,7 @@ def main() -> None:
     training_args = SFTConfig(
         output_dir=str(output_dir),
         run_name=args.run_name,
+        deepspeed=args.deepspeed_config,
         learning_rate=args.learning_rate,
         lr_scheduler_type=args.lr_scheduler_type,
         warmup_ratio=args.warmup_ratio,

@@ -18,7 +18,7 @@ ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 read -r -a BENCHMARK_ARRAY <<< "$BENCHMARKS"
 
 CMD=(
-  "$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/benchmark.py"
   --device "$DEVICE"
   --batch_size "$BATCH_SIZE"
   --benchmarks "${BENCHMARK_ARRAY[@]}"

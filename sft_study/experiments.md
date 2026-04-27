@@ -30,15 +30,13 @@ sft_study/
   scripts/
     common.py
     train_sft.py
-    dataset_tools.py
+    dataset_utils.py
     generate.py
-    run_lm_eval.py
-    evaluate_checkpoint.py
+    benchmark.py
     debug/
       compare_fixed_prompt_eos_rank.py
       debug_single_fixed_prompt.py
       inspect_model.py
-      inspect_training_examples.py
       monitor_stop_behavior.py
       probe_eos_loss.py
   runs/
@@ -58,10 +56,10 @@ sft_study/
 
 辅助脚本现在统一成两类入口：
 
-- `scripts/dataset_tools.py`
+- `scripts/dataset_utils.py`
   负责数据准备，子命令是 `mix`、`token-match` 和 `holdout-split`
 - `scripts/debug/inspect_model.py`
-  负责诊断检查，子命令是 `special-tokens` 和 `chat-template`
+  负责模板/样本诊断，子命令是 `template` 和 `examples`
 
 ## 统一约定
 
@@ -534,7 +532,7 @@ CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
 如果你这次只想快速看 fixed case，不想跑 benchmark：
 
 ```bash
-python sft_study/scripts/evaluate_checkpoint.py \
+python sft_study/scripts/benchmark.py \
   --checkpoint_dir sft_study/outputs/e1_no_robots_smoke \
   --skip_benchmarks
 ```
@@ -562,7 +560,7 @@ BENCHMARKS="ifeval gsm8k" \
   用来对比 base model 和 checkpoint 在同一条 fixed prompt 上的 `chosen token / native eos / <|im_end|> / <|endoftext|>` 倾向，避免把不同 tokenizer 的 eos 混在一起看
 - 停止行为监控：`python sft_study/scripts/debug/monitor_stop_behavior.py --checkpoint_dir <checkpoint_dir>`
   会同时给出普通 assistant 回复末尾 `<|im_end|>` 的平均 NLL、空 assistant probe 的 `<|im_end|>` NLL，以及 fixed prompts 的自然停止率，适合按 checkpoint 或 epoch 纵向看趋势
-- 训练样本 token 检查：`python sft_study/scripts/debug/inspect_training_examples.py --checkpoint_dir <checkpoint_dir> --num_examples 10`
+- 模板和训练样本检查：`python sft_study/scripts/debug/inspect_model.py examples --checkpoint_dir <checkpoint_dir> --num_examples 10`
   会直接读取训练集前 N 条，把 `messages -> chat template -> token ids` 这条链渲染出来，并额外对比 checkpoint 里保存的 `chat_template.jinja`
 - 固定 prompts viewer：直接打开 `sft_study/fixed_prompts_viewer.html`
   在浏览器里选择一个或多个 `fixed_prompts.jsonl` 文件后，就能以更易读的卡片形式查看内容；不需要 build，也不需要起服务

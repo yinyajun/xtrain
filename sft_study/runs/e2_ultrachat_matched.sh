@@ -55,6 +55,6 @@ fi
 
 "${CMD[@]}"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py" \
+"$PYTHON_BIN" "$ROOT_DIR/scripts/benchmark.py" \
   --checkpoint_dir "$OUTPUT_DIR" \
   --skip_benchmarks

@@ -13,7 +13,7 @@ ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 COMMON_EVAL_CONFIG="${COMMON_EVAL_CONFIG:-smol-magpie-ultra}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e4c_numina_cot_100k"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_tools.py" token-match \
+"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_utils.py" token-match \
   --model_name_or_path "$MODEL" \
   --reference_dataset "HuggingFaceTB/smoltalk" \
   --reference_dataset_config "smol-magpie-ultra" \
@@ -26,7 +26,7 @@ OUTPUT_DIR="$ROOT_DIR/outputs/e4c_numina_cot_100k"
   --seed 42 \
   --output_jsonl "$SLICE_JSONL"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_tools.py" mix \
+"$PYTHON_BIN" "$ROOT_DIR/scripts/dataset_utils.py" mix \
   --component "HuggingFaceTB/smoltalk|smol-magpie-ultra|train|15000|-" \
   --component "$SLICE_JSONL|-|train|all|-" \
   --seed 42 \
@@ -77,6 +77,6 @@ fi
 
 "${CMD[@]}"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/evaluate_checkpoint.py" \
+"$PYTHON_BIN" "$ROOT_DIR/scripts/benchmark.py" \
   --checkpoint_dir "$OUTPUT_DIR" \
   --skip_benchmarks
