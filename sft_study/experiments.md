@@ -595,10 +595,17 @@ bash sft_study/install.sh
 bash sft_study/install.sh --flash-attn
 ```
 
+如果你要跑 `run_distributed/` 下的多卡脚本，还需要额外安装 `deepspeed`：
+
+```bash
+bash sft_study/install.sh --deepspeed
+```
+
 说明：
 
 - `install.sh` 默认只装基础训练与评估依赖，也包含 `wandb`
 - `requirements.txt` 是底层依赖清单
+- `install.sh --deepspeed` 会额外安装分布式训练依赖 `deepspeed`
 - `install.sh --flash-attn` 会额外安装 `ninja`、`packaging`、`psutil` 和 `flash-attn`
 - `flash-attn` 仍然通过 `--no-build-isolation` 安装
 - `flash-attn` 通常只建议在 Linux + CUDA 环境安装

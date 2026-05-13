@@ -75,6 +75,12 @@ bash sft_study/install.sh
 - 这里的 `lm-eval[hf,ifeval]` 已经包含了 Hugging Face 后端和 `IFEval` 任务依赖
 - 为了减少环境差异导致的漏装，`langdetect` 和 `immutabledict` 也额外显式写进了基础依赖
 
+如果你要跑多卡分布式训练，先安装 `deepspeed`：
+
+```bash
+bash sft_study/install.sh --deepspeed
+```
+
 如果你是 Linux + NVIDIA，并且想额外启用 `flash-attn` 等加速，再跑一次带参数的安装脚本：
 
 ```bash
@@ -85,10 +91,11 @@ bash sft_study/install.sh --flash-attn
 
 - `install.sh` 默认只装基础依赖，不装 `flash-attn`
 - `requirements.txt` 是基础依赖清单
+- `install.sh --deepspeed` 会额外安装分布式训练依赖 `deepspeed`
 - `install.sh --flash-attn` 会额外安装 `ninja`、`packaging`、`psutil` 和 `flash-attn`
 - `flash-attn` 仍然通过 `--no-build-isolation` 安装
 - `flash-attn` 通常只建议在 Linux + CUDA 环境安装
-- 如果要用多卡分布式训练，还需要安装可用的 `deepspeed`，并通过 `sft_study/run_distributed/e3_smol_magpie_20k_2gpu.sh` 启动。
+- `deepspeed` 安装好之后，再通过 `sft_study/run_distributed/e3_smol_magpie_20k_2gpu.sh` 这类脚本启动多卡训练。
 
 ## 4. 检查 PyTorch 和 CUDA
 

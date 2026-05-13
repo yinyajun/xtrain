@@ -13,6 +13,11 @@ DeepSpeed ZeRO-2
 - `DEEPSPEED_CONFIG`：默认 `sft_study/deepspeed_zero2.json`
 - `MODEL` / `TOKENIZER_PATH` / `ATTN_IMPLEMENTATION`：同单卡脚本
 
+前置依赖：
+
+- 这些脚本依赖 `deepspeed`
+- 如果还没装，先执行 `bash sft_study/install.sh --deepspeed`
+
 脚本文件名仍然保留 `e*_2gpu.sh`，方便区分它们是分布式版本；实际的输出目录和 W&B `run_name` 会使用 `NPROC_PER_NODE` 自动加后缀，比如 `2gpu`、`4gpu`。
 
 ## 常用方式
