@@ -31,7 +31,7 @@ CMD=(
   --per_device_train_batch_size 2 \
   --per_device_eval_batch_size 4 \
   --gradient_accumulation_steps 16 \
-  --logging_steps 10 \
+  --logging_steps 5 \
   --eval_steps 50 \
   --save_steps 50 \
   --save_total_limit 1 \
