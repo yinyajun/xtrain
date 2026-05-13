@@ -24,7 +24,8 @@
 sft_study/
   install.md
   experiments.md
-  runs.md
+  run_single.md / run_distributed.md / run_eval.md
+  deepspeed_zero2.json
   requirements.txt
   requirements-extra.txt
   data/
@@ -36,10 +37,7 @@ sft_study/
     benchmark.py
     debug/
       monitor.py
-  runs/
-    e0_fixed_prompts_base.sh
-    generate_fixed_prompts.sh
-    checkpoint_benchmark.sh
+  run_single/
     e1_no_robots_smoke.sh
     e1_no_robots_full.sh
     e2_prepare_ultrachat_token_match.sh
@@ -50,6 +48,20 @@ sft_study/
     e4b_systemchats_30k.sh
     e4c_numina_cot_100k.sh
     e5_tulu3_100k.sh
+  run_distributed/
+    e1_no_robots_smoke_2gpu.sh
+    e1_no_robots_full_2gpu.sh
+    e2_no_robots_matched_2gpu.sh
+    e2_ultrachat_matched_2gpu.sh
+    e3_smol_magpie_20k_2gpu.sh
+    e4a_smol_constraints_2gpu.sh
+    e4b_systemchats_30k_2gpu.sh
+    e4c_numina_cot_100k_2gpu.sh
+    e5_tulu3_100k_2gpu.sh
+  run_eval/
+    e0_fixed_prompts_base.sh
+    generate_fixed_prompts.sh
+    checkpoint_benchmark.sh
 ```
 
 辅助脚本现在统一成两类入口：
@@ -58,17 +70,20 @@ sft_study/
   负责数据准备，子命令是 `mix`、`token-match` 和 `holdout-split`
 - `scripts/debug/monitor.py`
   负责 checkpoint 生成/停止行为诊断，子命令是 `single`、`compare` 和 `stop`
+- `run_distributed/e*_2gpu.sh`
+  负责用 `torchrun + DeepSpeed ZeRO-2` 启动同一套实验
 
 文档入口：
 
 - `install.md`：环境安装和依赖准备
-- `runs.md`：`runs/` 目录下每个 shell 脚本的常用用法
+- `run_single.md` / `run_distributed.md` / `run_eval.md`：三类 shell 脚本的常用用法
 - `experiments.md`：实验设计、实验顺序和观察重点
 
 ## 统一约定
 
 - 主线模型：`Qwen/Qwen2.5-7B`
 - 训练方式：LoRA 为主；脚本支持自动切到 4-bit QLoRA
+- 分布式：同一个 `train_sft.py` 支持可选 `--deepspeed_config`
 - 框架：`TRL SFTTrainer`
 - 默认 `max_length=2048`
 - 默认 `packing=False`
@@ -78,27 +93,26 @@ sft_study/
 
 训练后的统一评测入口：
 
-- `runs/checkpoint_benchmark.sh`
+- `run_eval/checkpoint_benchmark.sh`
 - 只跑 `IFEval / GSM8K / MMLU / CMMLU` 等标准 benchmark
-- 固定 prompt 生成单独使用 `runs/generate_fixed_prompts.sh`
+- 固定 prompt 生成单独使用 `run_eval/generate_fixed_prompts.sh`
 
-训练类实验统一支持 `wandb`：
+训练类实验固定使用 `wandb`：
 
-- 默认 `REPORT_TO=none`
-- 想开启时，在命令前加：
-  `REPORT_TO=wandb WANDB_PROJECT=sft-study`
-- `run_name` 已经在各个 `runs/*.sh` 里固定好了，会直接作为 W&B run name 使用
+- 脚本里已固定 `--report_to wandb`
+- `run_name` 已经在各个训练脚本里固定好了，会直接作为 W&B run name 使用
+- 如需关闭 W&B，把对应脚本里的 `--report_to wandb` 改成 `--report_to none`
 
 如果你已经安装了 `flash-attn`，所有训练/评估脚本都支持用环境变量显式打开 `Flash Attention 2`：
 
 ```bash
-ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/e1_no_robots_smoke.sh
+ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/run_single/e1_no_robots_smoke.sh
 ```
 
 评估同理：
 
 ```bash
-ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/checkpoint_benchmark.sh
+ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/run_eval/checkpoint_benchmark.sh
 ```
 
 说明：
@@ -106,6 +120,14 @@ ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/checkpoint_benchmark.s
 - 安装了 `flash-attn` 也不会自动启用，必须显式传 `ATTN_IMPLEMENTATION=flash_attention_2`
 - 训练和评估都会把这个值透传给底层 `transformers`
 - 如果显卡、dtype 或模型组合不兼容，先去掉这个环境变量再排查
+
+如果要两卡/多卡训练，直接跑 `run_distributed/` 下对应的 `e*_2gpu.sh`：
+
+```bash
+NPROC_PER_NODE=2 bash sft_study/run_distributed/e3_smol_magpie_20k_2gpu.sh
+```
+
+`NPROC_PER_NODE` 会同时影响输出目录和 W&B `run_name`。例如 `NPROC_PER_NODE=4` 时，输出目录会变成 `outputs/e3_smol_magpie_20k_4gpu`，`run_name` 会变成 `e3_smol_magpie_20k_4gpu`。
 
 为什么显式写 `eos_token`：
 
@@ -161,18 +183,18 @@ ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/checkpoint_benchmark.s
 
 跑法：
 
-- `runs/e0_fixed_prompts_base.sh`
+- `run_eval/e0_fixed_prompts_base.sh`
 
 运行命令：
 
 ```bash
-bash sft_study/runs/e0_fixed_prompts_base.sh
+bash sft_study/run_eval/e0_fixed_prompts_base.sh
 ```
 
 如果你已经装了 `flash-attn`：
 
 ```bash
-ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/e0_fixed_prompts_base.sh
+ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/run_eval/e0_fixed_prompts_base.sh
 ```
 
 主要观察：
@@ -186,7 +208,7 @@ ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/e0_fixed_prompts_base.
 ```bash
 MODEL=Qwen/Qwen2.5-7B \
 OUTPUT_DIR=sft_study/outputs/e0_base_eval \
-  bash sft_study/runs/checkpoint_benchmark.sh
+  bash sft_study/run_eval/checkpoint_benchmark.sh
 ```
 
 如果你已经装了 `flash-attn`：
@@ -195,7 +217,7 @@ OUTPUT_DIR=sft_study/outputs/e0_base_eval \
 ATTN_IMPLEMENTATION=flash_attention_2 \
 MODEL=Qwen/Qwen2.5-7B \
 OUTPUT_DIR=sft_study/outputs/e0_base_eval \
-  bash sft_study/runs/checkpoint_benchmark.sh
+  bash sft_study/run_eval/checkpoint_benchmark.sh
 ```
 
 ## E1：No Robots 干净单轮基线
@@ -212,30 +234,29 @@ OUTPUT_DIR=sft_study/outputs/e0_base_eval \
 
 脚本：
 
-- 冒烟版：`runs/e1_no_robots_smoke.sh`
-- 完整版：`runs/e1_no_robots_full.sh`
+- 冒烟版：`run_single/e1_no_robots_smoke.sh`
+- 完整版：`run_single/e1_no_robots_full.sh`
 
 运行命令：
 
 ```bash
-bash sft_study/runs/e1_no_robots_smoke.sh
+bash sft_study/run_single/e1_no_robots_smoke.sh
 ```
 
 如果你已经装了 `flash-attn`：
 
 ```bash
-ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/e1_no_robots_smoke.sh
+ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/run_single/e1_no_robots_smoke.sh
 ```
 
 ```bash
-bash sft_study/runs/e1_no_robots_full.sh
+bash sft_study/run_single/e1_no_robots_full.sh
 ```
 
-如果要记到 W&B：
+W&B 已在脚本中固定开启：
 
 ```bash
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e1_no_robots_smoke.sh
+bash sft_study/run_single/e1_no_robots_smoke.sh
 ```
 
 建议先跑：
@@ -278,9 +299,9 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 脚本：
 
-- 先准备对齐子集：`runs/e2_prepare_ultrachat_token_match.sh`
-- A 组训练：`runs/e2_no_robots_matched.sh`
-- B 组训练：`runs/e2_ultrachat_matched.sh`
+- 先准备对齐子集：`run_single/e2_prepare_ultrachat_token_match.sh`
+- A 组训练：`run_single/e2_no_robots_matched.sh`
+- B 组训练：`run_single/e2_ultrachat_matched.sh`
 
 额外控制：
 
@@ -291,19 +312,17 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 运行命令：
 
 ```bash
-bash sft_study/runs/e2_prepare_ultrachat_token_match.sh
-bash sft_study/runs/e2_no_robots_matched.sh
-bash sft_study/runs/e2_ultrachat_matched.sh
+bash sft_study/run_single/e2_prepare_ultrachat_token_match.sh
+bash sft_study/run_single/e2_no_robots_matched.sh
+bash sft_study/run_single/e2_ultrachat_matched.sh
 ```
 
-如果要记到 W&B：
+W&B 已在脚本中固定开启：
 
 ```bash
-bash sft_study/runs/e2_prepare_ultrachat_token_match.sh
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e2_no_robots_matched.sh
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e2_ultrachat_matched.sh
+bash sft_study/run_single/e2_prepare_ultrachat_token_match.sh
+bash sft_study/run_single/e2_no_robots_matched.sh
+bash sft_study/run_single/e2_ultrachat_matched.sh
 ```
 
 主要观察：
@@ -329,19 +348,18 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 脚本：
 
-- `runs/e3_smol_magpie_20k.sh`
+- `run_single/e3_smol_magpie_20k.sh`
 
 运行命令：
 
 ```bash
-bash sft_study/runs/e3_smol_magpie_20k.sh
+bash sft_study/run_single/e3_smol_magpie_20k.sh
 ```
 
-如果要记到 W&B：
+W&B 已在脚本中固定开启：
 
 ```bash
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e3_smol_magpie_20k.sh
+bash sft_study/run_single/e3_smol_magpie_20k.sh
 ```
 
 建议规模：
@@ -377,19 +395,18 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 脚本：
 
-- `runs/e4a_smol_constraints.sh`
+- `run_single/e4a_smol_constraints.sh`
 
 运行命令：
 
 ```bash
-bash sft_study/runs/e4a_smol_constraints.sh
+bash sft_study/run_single/e4a_smol_constraints.sh
 ```
 
-如果要记到 W&B：
+W&B 已在脚本中固定开启：
 
 ```bash
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e4a_smol_constraints.sh
+bash sft_study/run_single/e4a_smol_constraints.sh
 ```
 
 关注：
@@ -407,19 +424,18 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 脚本：
 
-- `runs/e4b_systemchats_30k.sh`
+- `run_single/e4b_systemchats_30k.sh`
 
 运行命令：
 
 ```bash
-bash sft_study/runs/e4b_systemchats_30k.sh
+bash sft_study/run_single/e4b_systemchats_30k.sh
 ```
 
-如果要记到 W&B：
+W&B 已在脚本中固定开启：
 
 ```bash
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e4b_systemchats_30k.sh
+bash sft_study/run_single/e4b_systemchats_30k.sh
 ```
 
 关注：
@@ -437,19 +453,18 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 脚本：
 
-- `runs/e4c_numina_cot_100k.sh`
+- `run_single/e4c_numina_cot_100k.sh`
 
 运行命令：
 
 ```bash
-bash sft_study/runs/e4c_numina_cot_100k.sh
+bash sft_study/run_single/e4c_numina_cot_100k.sh
 ```
 
-如果要记到 W&B：
+W&B 已在脚本中固定开启：
 
 ```bash
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e4c_numina_cot_100k.sh
+bash sft_study/run_single/e4c_numina_cot_100k.sh
 ```
 
 关注：
@@ -470,19 +485,18 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 脚本：
 
-- `runs/e5_tulu3_100k.sh`
+- `run_single/e5_tulu3_100k.sh`
 
 运行命令：
 
 ```bash
-bash sft_study/runs/e5_tulu3_100k.sh
+bash sft_study/run_single/e5_tulu3_100k.sh
 ```
 
-如果要记到 W&B：
+W&B 已在脚本中固定开启：
 
 ```bash
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e5_tulu3_100k.sh
+bash sft_study/run_single/e5_tulu3_100k.sh
 ```
 
 建议做法：
@@ -518,29 +532,29 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 
 第一次建议只跑这三个：
 
-1. `runs/e0_fixed_prompts_base.sh`
-2. `runs/e1_no_robots_smoke.sh`
-3. `runs/e2_prepare_ultrachat_token_match.sh && runs/e2_no_robots_matched.sh && runs/e2_ultrachat_matched.sh`
+1. `run_eval/e0_fixed_prompts_base.sh`
+2. `run_single/e1_no_robots_smoke.sh`
+3. `run_single/e2_prepare_ultrachat_token_match.sh && run_single/e2_no_robots_matched.sh && run_single/e2_ultrachat_matched.sh`
 
 这样你会最快建立两个核心直觉：
 
 - SFT 怎么把 base 模型拉成 instruct
 - 不同数据形态到底在教模型什么
 
-每个 `runs/*.sh` 的常用环境变量和命令模板统一整理在 `runs.md`。下面只保留最常用的评估入口。
+每个 `run_single/*.sh` 的常用环境变量和命令模板统一整理在 `run_single.md` / `run_distributed.md` / `run_eval.md`。下面只保留最常用的评估入口。
 
 训练完任意一个 checkpoint 后，统一补评测：
 
 ```bash
 CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
-  bash sft_study/runs/checkpoint_benchmark.sh
+  bash sft_study/run_eval/checkpoint_benchmark.sh
 ```
 
 如果你这次只想快速看 fixed case，不想跑 benchmark：
 
 ```bash
 CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
-  bash sft_study/runs/generate_fixed_prompts.sh
+  bash sft_study/run_eval/generate_fixed_prompts.sh
 ```
 
 说明：
@@ -554,7 +568,7 @@ CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
 ```bash
 CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
 BENCHMARKS="ifeval gsm8k" \
-  bash sft_study/runs/checkpoint_benchmark.sh
+  bash sft_study/run_eval/checkpoint_benchmark.sh
 ```
 
 输出约定：

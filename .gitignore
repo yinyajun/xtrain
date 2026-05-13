@@ -1,0 +1,47 @@
+# macOS / editors
+.DS_Store
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Local envs
+.env
+.env.*
+!.env.example
+.venv/
+venv/
+env/
+
+# Logs
+*.log
+logs/
+
+# Experiment tracking
+wandb/
+mlruns/
+
+# Hugging Face / dataset caches
+.cache/
+hf_cache/
+datasets_cache/
+
+# sft_study generated artifacts
+sft_study/outputs/
+sft_study/artifacts/
+sft_study/wandb/
+sft_study/.cache/
+
+# Large model/checkpoint files that should stay local unless explicitly needed
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.ckpt

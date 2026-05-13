@@ -95,6 +95,7 @@ pip install flash-attn --no-build-isolation
 - `requirements-extra.txt` 现在只放可选 GPU 加速的前置依赖
 - `flash-attn` 单独安装是因为它常常需要 `--no-build-isolation`
 - `flash-attn` 通常只建议在 Linux + CUDA 环境安装
+- 如果要用多卡分布式训练，还需要安装可用的 `deepspeed`，并通过 `sft_study/run_distributed/e3_smol_magpie_20k_2gpu.sh` 启动。
 
 ## 4. 检查 PyTorch 和 CUDA
 
@@ -164,13 +165,12 @@ source ~/.zshrc
 
 这套脚本默认：
 
-- `REPORT_TO=none`
+- `--report_to wandb`
 
-想把训练日志打到 W&B，就这样跑：
+确认已经 `wandb login` 后，直接跑训练脚本即可记录日志：
 
 ```bash
-REPORT_TO=wandb WANDB_PROJECT=sft-study \
-  bash sft_study/runs/e1_no_robots_smoke.sh
+bash sft_study/run_single/e1_no_robots_smoke.sh
 ```
 
 如果你还配置了 `WANDB_ENTITY`，它会一起生效。
@@ -286,15 +286,15 @@ python sft_study/scripts/debug/monitor.py single \
 如果这些都没问题，就可以开始跑：
 
 ```bash
-bash sft_study/runs/e0_fixed_prompts_base.sh
-bash sft_study/runs/e1_no_robots_smoke.sh
+bash sft_study/run_eval/e0_fixed_prompts_base.sh
+bash sft_study/run_single/e1_no_robots_smoke.sh
 ```
 
 如果你想直接用本地下载的模型目录，而不是仓库名，也可以：
 
 ```bash
 MODEL=/Users/yinyajun/Common/Learn/codes/xtrain/sft_study/artifacts/models/Qwen2.5-7B \
-  bash sft_study/runs/e1_no_robots_smoke.sh
+  bash sft_study/run_single/e1_no_robots_smoke.sh
 ```
 
 ## 9. 常见问题
@@ -311,7 +311,7 @@ source ~/.zshrc
 
 先检查：
 
-- 是否传了 `REPORT_TO=wandb`
+- 脚本里是否保留 `--report_to wandb`
 - `WANDB_API_KEY` 是否配置正确
 - 是否已经 `wandb login`
 
