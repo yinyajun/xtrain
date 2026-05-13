@@ -183,7 +183,7 @@ def main() -> None:
         bias="none",
         task_type="CAUSAL_LM",
         target_modules=args.target_modules,
-        # ensure_weight_tying=True,
+        ensure_weight_tying=True,
     )
 
     training_args = SFTConfig(
