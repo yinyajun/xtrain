@@ -183,6 +183,7 @@ def main() -> None:
         bias="none",
         task_type="CAUSAL_LM",
         target_modules=args.target_modules,
+        ensure_weight_tying=True,
     )
 
     training_args = SFTConfig(
@@ -198,6 +199,7 @@ def main() -> None:
         per_device_eval_batch_size=args.per_device_eval_batch_size,
         gradient_accumulation_steps=args.gradient_accumulation_steps,
         logging_steps=args.logging_steps,
+        log_level="info",
         eval_strategy="steps",
         eval_steps=args.eval_steps,
         save_strategy="steps",
