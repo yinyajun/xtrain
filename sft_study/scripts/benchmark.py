@@ -13,7 +13,7 @@ from typing import Any
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from common import save_json
+from dataset_utils import save_json
 
 
 DEFAULT_BENCHMARKS = ["ifeval", "gsm8k", "mmlu", "cmmlu"]

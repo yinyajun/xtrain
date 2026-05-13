@@ -275,11 +275,12 @@ print("tokenizer ok:", tok.__class__.__name__)
 PY
 ```
 
-如果你想顺手排查 tokenizer / chat template / special tokens，也可以直接用统一诊断脚本：
+如果你想顺手排查 checkpoint 的 fixed prompt 生成和停止行为，也可以直接用统一监控脚本：
 
 ```bash
-python sft_study/scripts/debug/inspect_model.py template \
-  --model_name_or_path Qwen/Qwen2.5-7B
+python sft_study/scripts/debug/monitor.py single \
+  --model_name_or_path Qwen/Qwen2.5-7B \
+  --prompt_index 0
 ```
 
 如果这些都没问题，就可以开始跑：

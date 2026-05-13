@@ -28,17 +28,12 @@ sft_study/
   data/
     fixed_prompts.jsonl
   scripts/
-    common.py
     train_sft.py
     dataset_utils.py
     generate.py
     benchmark.py
     debug/
-      compare_fixed_prompt_eos_rank.py
-      debug_single_fixed_prompt.py
-      inspect_model.py
-      monitor_stop_behavior.py
-      probe_eos_loss.py
+      monitor.py
   runs/
     e0_fixed_prompts_base.sh
     eval_checkpoint.sh
@@ -58,8 +53,8 @@ sft_study/
 
 - `scripts/dataset_utils.py`
   负责数据准备，子命令是 `mix`、`token-match` 和 `holdout-split`
-- `scripts/debug/inspect_model.py`
-  负责模板/样本诊断，子命令是 `template` 和 `examples`
+- `scripts/debug/monitor.py`
+  负责 checkpoint 生成/停止行为诊断，子命令是 `single`、`compare` 和 `stop`
 
 ## 统一约定
 
@@ -554,14 +549,12 @@ BENCHMARKS="ifeval gsm8k" \
 输出约定：
 
 - 固定 prompts：`<eval_output_dir>/fixed_prompts.jsonl`
-- 单条样本调试：`python sft_study/scripts/debug/debug_single_fixed_prompt.py --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
+- 单条样本调试：`python sft_study/scripts/debug/monitor.py single --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
   用来排查“为什么停不住”这类问题；会打印渲染后的 prompt、tokenizer special tokens、raw completion（`skip_special_tokens=False`）以及 `<|im_end|>` 在生成序列中的位置
-- eos rank 对比：`python sft_study/scripts/debug/compare_fixed_prompt_eos_rank.py --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
+- eos rank 对比：`python sft_study/scripts/debug/monitor.py compare --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
   用来对比 base model 和 checkpoint 在同一条 fixed prompt 上的 `chosen token / native eos / <|im_end|> / <|endoftext|>` 倾向，避免把不同 tokenizer 的 eos 混在一起看
-- 停止行为监控：`python sft_study/scripts/debug/monitor_stop_behavior.py --checkpoint_dir <checkpoint_dir>`
+- 停止行为监控：`python sft_study/scripts/debug/monitor.py stop --checkpoint_dir <checkpoint_dir>`
   会同时给出普通 assistant 回复末尾 `<|im_end|>` 的平均 NLL、空 assistant probe 的 `<|im_end|>` NLL，以及 fixed prompts 的自然停止率，适合按 checkpoint 或 epoch 纵向看趋势
-- 模板和训练样本检查：`python sft_study/scripts/debug/inspect_model.py examples --checkpoint_dir <checkpoint_dir> --num_examples 10`
-  会直接读取训练集前 N 条，把 `messages -> chat template -> token ids` 这条链渲染出来，并额外对比 checkpoint 里保存的 `chat_template.jinja`
 - 固定 prompts viewer：直接打开 `sft_study/fixed_prompts_viewer.html`
   在浏览器里选择一个或多个 `fixed_prompts.jsonl` 文件后，就能以更易读的卡片形式查看内容；不需要 build，也不需要起服务
 - benchmark 原始结果：`<eval_output_dir>/benchmarks/`

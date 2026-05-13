@@ -9,7 +9,7 @@ from typing import Any
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from common import (
+from dataset_utils import (
     _normalize_conversational_dataset,
     load_dataset_split,
     maybe_filter_dataset,

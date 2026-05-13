@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
-from common import read_jsonl
+from dataset_utils import read_jsonl
 
 
 def parse_args() -> argparse.Namespace:
