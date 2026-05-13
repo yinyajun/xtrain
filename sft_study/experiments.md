@@ -22,7 +22,9 @@
 
 ```text
 sft_study/
+  install.md
   experiments.md
+  runs.md
   requirements.txt
   requirements-extra.txt
   data/
@@ -36,7 +38,8 @@ sft_study/
       monitor.py
   runs/
     e0_fixed_prompts_base.sh
-    eval_checkpoint.sh
+    generate_fixed_prompts.sh
+    checkpoint_benchmark.sh
     e1_no_robots_smoke.sh
     e1_no_robots_full.sh
     e2_prepare_ultrachat_token_match.sh
@@ -56,6 +59,12 @@ sft_study/
 - `scripts/debug/monitor.py`
   负责 checkpoint 生成/停止行为诊断，子命令是 `single`、`compare` 和 `stop`
 
+文档入口：
+
+- `install.md`：环境安装和依赖准备
+- `runs.md`：`runs/` 目录下每个 shell 脚本的常用用法
+- `experiments.md`：实验设计、实验顺序和观察重点
+
 ## 统一约定
 
 - 主线模型：`Qwen/Qwen2.5-7B`
@@ -69,8 +78,9 @@ sft_study/
 
 训练后的统一评测入口：
 
-- `runs/eval_checkpoint.sh`
-- 会生成固定 prompt 输出，并跑 `IFEval / GSM8K / MMLU / CMMLU`
+- `runs/checkpoint_benchmark.sh`
+- 只跑 `IFEval / GSM8K / MMLU / CMMLU` 等标准 benchmark
+- 固定 prompt 生成单独使用 `runs/generate_fixed_prompts.sh`
 
 训练类实验统一支持 `wandb`：
 
@@ -88,7 +98,7 @@ ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/e1_no_robots_smoke.sh
 评估同理：
 
 ```bash
-ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/eval_checkpoint.sh
+ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/checkpoint_benchmark.sh
 ```
 
 说明：
@@ -176,7 +186,7 @@ ATTN_IMPLEMENTATION=flash_attention_2 bash sft_study/runs/e0_fixed_prompts_base.
 ```bash
 MODEL=Qwen/Qwen2.5-7B \
 OUTPUT_DIR=sft_study/outputs/e0_base_eval \
-  bash sft_study/runs/eval_checkpoint.sh
+  bash sft_study/runs/checkpoint_benchmark.sh
 ```
 
 如果你已经装了 `flash-attn`：
@@ -185,7 +195,7 @@ OUTPUT_DIR=sft_study/outputs/e0_base_eval \
 ATTN_IMPLEMENTATION=flash_attention_2 \
 MODEL=Qwen/Qwen2.5-7B \
 OUTPUT_DIR=sft_study/outputs/e0_base_eval \
-  bash sft_study/runs/eval_checkpoint.sh
+  bash sft_study/runs/checkpoint_benchmark.sh
 ```
 
 ## E1：No Robots 干净单轮基线
@@ -517,19 +527,20 @@ REPORT_TO=wandb WANDB_PROJECT=sft-study \
 - SFT 怎么把 base 模型拉成 instruct
 - 不同数据形态到底在教模型什么
 
+每个 `runs/*.sh` 的常用环境变量和命令模板统一整理在 `runs.md`。下面只保留最常用的评估入口。
+
 训练完任意一个 checkpoint 后，统一补评测：
 
 ```bash
 CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
-  bash sft_study/runs/eval_checkpoint.sh
+  bash sft_study/runs/checkpoint_benchmark.sh
 ```
 
 如果你这次只想快速看 fixed case，不想跑 benchmark：
 
 ```bash
-python sft_study/scripts/benchmark.py \
-  --checkpoint_dir sft_study/outputs/e1_no_robots_smoke \
-  --skip_benchmarks
+CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
+  bash sft_study/runs/generate_fixed_prompts.sh
 ```
 
 说明：
@@ -543,22 +554,22 @@ python sft_study/scripts/benchmark.py \
 ```bash
 CHECKPOINT_DIR=sft_study/outputs/e1_no_robots_smoke \
 BENCHMARKS="ifeval gsm8k" \
-  bash sft_study/runs/eval_checkpoint.sh
+  bash sft_study/runs/checkpoint_benchmark.sh
 ```
 
 输出约定：
 
-- 固定 prompts：`<eval_output_dir>/fixed_prompts.jsonl`
+- 固定 prompts：`<checkpoint_dir>/eval/fixed_prompts.jsonl`
 - 单条样本调试：`python sft_study/scripts/debug/monitor.py single --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
   用来排查“为什么停不住”这类问题；会打印渲染后的 prompt、tokenizer special tokens、raw completion（`skip_special_tokens=False`）以及 `<|im_end|>` 在生成序列中的位置
 - eos rank 对比：`python sft_study/scripts/debug/monitor.py compare --checkpoint_dir <checkpoint_dir> --prompt_id one_word_capital`
   用来对比 base model 和 checkpoint 在同一条 fixed prompt 上的 `chosen token / native eos / <|im_end|> / <|endoftext|>` 倾向，避免把不同 tokenizer 的 eos 混在一起看
 - 停止行为监控：`python sft_study/scripts/debug/monitor.py stop --checkpoint_dir <checkpoint_dir>`
   会同时给出普通 assistant 回复末尾 `<|im_end|>` 的平均 NLL、空 assistant probe 的 `<|im_end|>` NLL，以及 fixed prompts 的自然停止率，适合按 checkpoint 或 epoch 纵向看趋势
-- 固定 prompts viewer：直接打开 `sft_study/fixed_prompts_viewer.html`
+- 固定 prompts viewer：直接打开 `sft_study/viewer.html`
   在浏览器里选择一个或多个 `fixed_prompts.jsonl` 文件后，就能以更易读的卡片形式查看内容；不需要 build，也不需要起服务
-- benchmark 原始结果：`<eval_output_dir>/benchmarks/`
-- 汇总：`<eval_output_dir>/benchmarks/summary.json`
+- benchmark 原始结果：`<checkpoint_dir>/eval/benchmarks/`
+- 汇总：`<checkpoint_dir>/eval/benchmarks/summary.json`
 
 ## 依赖
 

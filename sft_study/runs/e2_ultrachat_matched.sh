@@ -55,6 +55,4 @@ fi
 
 "${CMD[@]}"
 
-"$PYTHON_BIN" "$ROOT_DIR/scripts/benchmark.py" \
-  --checkpoint_dir "$OUTPUT_DIR" \
-  --skip_benchmarks
+CHECKPOINT_DIR="$OUTPUT_DIR" PYTHON_BIN="$PYTHON_BIN" ATTN_IMPLEMENTATION="$ATTN_IMPLEMENTATION" bash "$ROOT_DIR/runs/generate_fixed_prompts.sh"

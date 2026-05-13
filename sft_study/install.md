@@ -1,4 +1,4 @@
-# Prepare
+# Install
 
 这份文档是 `sft_study/` 的环境准备说明。
 

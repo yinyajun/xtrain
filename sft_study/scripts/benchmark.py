@@ -59,25 +59,19 @@ BENCHMARK_SPECS = {
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="对 base 模型或 SFT checkpoint 统一执行固定 prompt 生成和 benchmark 评估。"
+        description="对 base 模型或 SFT checkpoint 执行 lm-eval benchmark 评估。"
     )
     parser.add_argument("--checkpoint_dir", default=None, help="SFT 输出目录；如果存在 run_config.json，会自动补齐模型上下文。")
     parser.add_argument("--model_name_or_path", default=None, help="底模名称或本地模型路径。")
     parser.add_argument("--adapter_path", default=None, help="可选 LoRA adapter 路径。")
     parser.add_argument("--tokenizer_name_or_path", default=None, help="可选 tokenizer 路径。")
     parser.add_argument("--output_dir", default=None, help="评估结果输出目录。")
-    parser.add_argument("--prompts_file", default=None, help="固定 prompt 文件；不填则使用仓库默认样例。")
     parser.add_argument("--benchmarks", nargs="*", default=DEFAULT_BENCHMARKS, help="要运行的 benchmark 列表。")
     parser.add_argument("--device", default="auto", help="运行设备，例如 auto / cuda:0 / cpu。")
     parser.add_argument("--batch_size", default="auto", help="评估 batch size。")
     parser.add_argument("--dtype", default=None, help="可选推理 dtype。")
     parser.add_argument("--attn_implementation", default=None, help="可选注意力实现，例如 flash_attention_2。")
     parser.add_argument("--limit", default=None, help="可选 benchmark limit。")
-    parser.add_argument("--max_new_tokens", type=int, default=256, help="固定 prompt 生成时的最大新 token 数。")
-    parser.add_argument("--temperature", type=float, default=0.0, help="固定 prompt 生成温度。")
-    parser.add_argument("--top_p", type=float, default=1.0, help="固定 prompt 生成的 top_p。")
-    parser.add_argument("--skip_fixed_prompts", action="store_true", help="跳过固定 prompt 生成。")
-    parser.add_argument("--skip_benchmarks", action="store_true", help="跳过 benchmark 评估。")
     parser.add_argument("--log_samples", action="store_true", help="让 lm-eval 输出样本级日志。")
     parser.add_argument("--dry_run", action="store_true", help="只打印子命令，不真正执行。")
     return parser.parse_args()
@@ -111,19 +105,12 @@ def resolve_context(args: argparse.Namespace) -> dict[str, Any]:
     else:
         raise SystemExit("Pass --output_dir when evaluating without --checkpoint_dir.")
 
-    prompts_file = (
-        Path(args.prompts_file).resolve()
-        if args.prompts_file
-        else Path(__file__).resolve().parent.parent / "data" / "fixed_prompts.jsonl"
-    )
-
     return {
         "checkpoint_dir": str(checkpoint_dir) if checkpoint_dir else None,
         "model_name_or_path": model_name_or_path,
         "adapter_path": adapter_path,
         "tokenizer_name_or_path": tokenizer_name_or_path,
         "output_dir": output_dir,
-        "prompts_file": prompts_file,
     }
 
 
@@ -262,13 +249,6 @@ def run_benchmark_suite(
     return summary
 
 
-def run_command(command: list[str], dry_run: bool) -> None:
-    print(f"$ {shlex.join(command)}")
-    if dry_run:
-        return
-    subprocess.run(command, check=True)
-
-
 def main() -> None:
     args = parse_args()
     context = resolve_context(args)
@@ -286,7 +266,6 @@ def main() -> None:
         "model_name_or_path": context["model_name_or_path"],
         "adapter_path": context["adapter_path"],
         "tokenizer_name_or_path": context["tokenizer_name_or_path"],
-        "prompts_file": str(context["prompts_file"]),
         "benchmarks": benchmarks,
         "device": args.device,
         "batch_size": args.batch_size,
@@ -296,47 +275,20 @@ def main() -> None:
     }
     save_json(output_dir / "evaluation_config.json", evaluation_config)
 
-    scripts_dir = Path(__file__).resolve().parent
-    if not args.skip_fixed_prompts:
-        fixed_prompt_command = [
-            sys.executable,
-            str(scripts_dir / "generate.py"),
-            "--model_name_or_path",
-            context["model_name_or_path"],
-            "--tokenizer_name_or_path",
-            context["tokenizer_name_or_path"],
-            "--prompts_file",
-            str(context["prompts_file"]),
-            "--output_file",
-            str(output_dir / "fixed_prompts.jsonl"),
-            "--max_new_tokens",
-            str(args.max_new_tokens),
-            "--temperature",
-            str(args.temperature),
-            "--top_p",
-            str(args.top_p),
-        ]
-        if args.attn_implementation:
-            fixed_prompt_command.extend(["--attn_implementation", args.attn_implementation])
-        if context["adapter_path"]:
-            fixed_prompt_command.extend(["--adapter_path", context["adapter_path"]])
-        run_command(fixed_prompt_command, args.dry_run)
-
-    if not args.skip_benchmarks:
-        run_benchmark_suite(
-            model_name_or_path=context["model_name_or_path"],
-            adapter_path=context["adapter_path"],
-            tokenizer_name_or_path=context["tokenizer_name_or_path"],
-            output_dir=output_dir / "benchmarks",
-            benchmarks=benchmarks,
-            device=args.device,
-            batch_size=args.batch_size,
-            dtype=args.dtype,
-            attn_implementation=args.attn_implementation,
-            limit=args.limit,
-            log_samples=args.log_samples,
-            dry_run=args.dry_run,
-        )
+    run_benchmark_suite(
+        model_name_or_path=context["model_name_or_path"],
+        adapter_path=context["adapter_path"],
+        tokenizer_name_or_path=context["tokenizer_name_or_path"],
+        output_dir=output_dir / "benchmarks",
+        benchmarks=benchmarks,
+        device=args.device,
+        batch_size=args.batch_size,
+        dtype=args.dtype,
+        attn_implementation=args.attn_implementation,
+        limit=args.limit,
+        log_samples=args.log_samples,
+        dry_run=args.dry_run,
+    )
 
     print(json.dumps({"output_dir": str(output_dir)}, ensure_ascii=False, indent=2))
 
