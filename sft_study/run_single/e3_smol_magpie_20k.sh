@@ -6,6 +6,7 @@ MODEL="${MODEL:-Qwen/Qwen2.5-7B}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e3_smol_magpie_20k"
+export WANDB_PROJECT="sft-study"
 
 CMD=(
   python3 "$ROOT_DIR/scripts/train_sft.py"

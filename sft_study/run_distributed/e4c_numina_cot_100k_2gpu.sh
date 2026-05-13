@@ -12,6 +12,7 @@ SLICE_JSONL="$ROOT_DIR/artifacts/datasets/e4c_numina_cot_token_matched.jsonl"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 COMMON_EVAL_CONFIG="${COMMON_EVAL_CONFIG:-smol-magpie-ultra}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e4c_numina_cot_100k_$RUN_SUFFIX"
+export WANDB_PROJECT="sft-study"
 
 python3 "$ROOT_DIR/scripts/dataset_utils.py" token-match \
   --model_name_or_path "$MODEL" \

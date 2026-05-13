@@ -9,6 +9,7 @@ SLICE_JSONL="$ROOT_DIR/artifacts/datasets/e4a_smol_constraints_token_matched.jso
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 COMMON_EVAL_CONFIG="${COMMON_EVAL_CONFIG:-smol-magpie-ultra}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e4a_smol_constraints"
+export WANDB_PROJECT="sft-study"
 
 python3 "$ROOT_DIR/scripts/dataset_utils.py" token-match \
   --model_name_or_path "$MODEL" \

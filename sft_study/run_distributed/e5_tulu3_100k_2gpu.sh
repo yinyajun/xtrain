@@ -11,6 +11,7 @@ ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 TRAIN_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_train.jsonl"
 EVAL_JSONL="$ROOT_DIR/artifacts/datasets/e5_tulu3_eval.jsonl"
 OUTPUT_DIR="$ROOT_DIR/outputs/e5_tulu3_100k_$RUN_SUFFIX"
+export WANDB_PROJECT="sft-study"
 
 python3 "$ROOT_DIR/scripts/dataset_utils.py" holdout-split \
   --dataset "allenai/tulu-3-sft-mixture" \

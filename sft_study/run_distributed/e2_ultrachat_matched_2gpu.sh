@@ -11,6 +11,7 @@ SEED="${SEED:-42}"
 TRAIN_JSONL="${TRAIN_JSONL:-$ROOT_DIR/artifacts/datasets/e2_ultrachat_token_matched_train.jsonl}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e2_ultrachat_matched_$RUN_SUFFIX"
+export WANDB_PROJECT="sft-study"
 
 python3 "$ROOT_DIR/scripts/dataset_utils.py" token-match \
   --model_name_or_path "$MODEL" \
