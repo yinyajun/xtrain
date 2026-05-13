@@ -12,7 +12,6 @@
 
 ```bash
 bash sft_study/run_single/e1_no_robots_smoke.sh
-bash sft_study/run_single/e2_prepare_ultrachat_token_match.sh
 bash sft_study/run_single/e2_no_robots_matched.sh
 bash sft_study/run_single/e2_ultrachat_matched.sh
 ```
@@ -33,14 +32,6 @@ bash sft_study/run_single/e1_no_robots_smoke.sh
 
 ```bash
 bash sft_study/run_single/e1_no_robots_full.sh
-```
-
-`e2_prepare_ultrachat_token_match.sh`
-
-准备 UltraChat token-matched 本地 JSONL：
-
-```bash
-bash sft_study/run_single/e2_prepare_ultrachat_token_match.sh
 ```
 
 `e2_no_robots_matched.sh`

@@ -8,6 +8,17 @@ TRAIN_JSONL="${TRAIN_JSONL:-$ROOT_DIR/artifacts/datasets/e2_ultrachat_token_matc
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e2_ultrachat_matched"
 
+python3 "$ROOT_DIR/scripts/dataset_utils.py" token-match \
+  --model_name_or_path "$MODEL" \
+  --reference_dataset "HuggingFaceH4/no_robots" \
+  --reference_split "train_sft" \
+  --reference_max_samples 9500 \
+  --candidate_dataset "HuggingFaceH4/ultrachat_200k" \
+  --candidate_split "train_sft" \
+  --drop_overlong \
+  --seed "$SEED" \
+  --output_jsonl "$TRAIN_JSONL"
+
 CMD=(
   python3 "$ROOT_DIR/scripts/train_sft.py"
   --model_name_or_path "$MODEL" \
@@ -33,10 +44,10 @@ CMD=(
   --warmup_ratio 0.03 \
   --weight_decay 0.01 \
   --quantization auto \
-  --lora_r 16 \
-  --lora_alpha 32 \
+  --lora_r 32 \
+  --lora_alpha 64 \
   --lora_dropout 0.05 \
-  --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj \
+  --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj lm_head \
   --report_to wandb \
   --gradient_checkpointing \
   --seed 42

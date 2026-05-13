@@ -43,10 +43,9 @@ bash sft_study/run_distributed/e4c_numina_cot_100k_2gpu.sh
 bash sft_study/run_distributed/e5_tulu3_100k_2gpu.sh
 ```
 
-E2 的 UltraChat matched 仍然需要先准备数据：
+E2 的 UltraChat matched 会在训练脚本里自动准备数据：
 
 ```bash
-bash sft_study/run_single/e2_prepare_ultrachat_token_match.sh
 bash sft_study/run_distributed/e2_ultrachat_matched_2gpu.sh
 ```
 

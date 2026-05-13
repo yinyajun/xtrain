@@ -55,7 +55,7 @@ python -m pip install --upgrade pip setuptools wheel
 
 ```bash
 cd /Users/yinyajun/Common/Learn/codes/xtrain
-pip install -r sft_study/requirements.txt
+bash sft_study/install.sh
 ```
 
 这一步会安装：
@@ -75,25 +75,18 @@ pip install -r sft_study/requirements.txt
 - 这里的 `lm-eval[hf,ifeval]` 已经包含了 Hugging Face 后端和 `IFEval` 任务依赖
 - 为了减少环境差异导致的漏装，`langdetect` 和 `immutabledict` 也额外显式写进了基础依赖
 
-如果你是 Linux + NVIDIA，并且想额外启用 `flash-attn` 等加速，建议分两步装。
-
-先装可选前置依赖：
+如果你是 Linux + NVIDIA，并且想额外启用 `flash-attn` 等加速，再跑一次带参数的安装脚本：
 
 ```bash
-pip install -r sft_study/requirements-extra.txt
-```
-
-再单独安装 `flash-attn`：
-
-```bash
-pip install flash-attn --no-build-isolation
+bash sft_study/install.sh --flash-attn
 ```
 
 说明：
 
-- `requirements.txt` 是基础依赖
-- `requirements-extra.txt` 现在只放可选 GPU 加速的前置依赖
-- `flash-attn` 单独安装是因为它常常需要 `--no-build-isolation`
+- `install.sh` 默认只装基础依赖，不装 `flash-attn`
+- `requirements.txt` 是基础依赖清单
+- `install.sh --flash-attn` 会额外安装 `ninja`、`packaging`、`psutil` 和 `flash-attn`
+- `flash-attn` 仍然通过 `--no-build-isolation` 安装
 - `flash-attn` 通常只建议在 Linux + CUDA 环境安装
 - 如果要用多卡分布式训练，还需要安装可用的 `deepspeed`，并通过 `sft_study/run_distributed/e3_smol_magpie_20k_2gpu.sh` 启动。
 

@@ -23,11 +23,11 @@
 ```text
 sft_study/
   install.md
+  install.sh
   experiments.md
   run_single.md / run_distributed.md / run_eval.md
   deepspeed_zero2.json
   requirements.txt
-  requirements-extra.txt
   data/
     fixed_prompts.jsonl
   scripts/
@@ -40,7 +40,6 @@ sft_study/
   run_single/
     e1_no_robots_smoke.sh
     e1_no_robots_full.sh
-    e2_prepare_ultrachat_token_match.sh
     e2_no_robots_matched.sh
     e2_ultrachat_matched.sh
     e3_smol_magpie_20k.sh
@@ -299,7 +298,6 @@ bash sft_study/run_single/e1_no_robots_smoke.sh
 
 脚本：
 
-- 先准备对齐子集：`run_single/e2_prepare_ultrachat_token_match.sh`
 - A 组训练：`run_single/e2_no_robots_matched.sh`
 - B 组训练：`run_single/e2_ultrachat_matched.sh`
 
@@ -312,7 +310,6 @@ bash sft_study/run_single/e1_no_robots_smoke.sh
 运行命令：
 
 ```bash
-bash sft_study/run_single/e2_prepare_ultrachat_token_match.sh
 bash sft_study/run_single/e2_no_robots_matched.sh
 bash sft_study/run_single/e2_ultrachat_matched.sh
 ```
@@ -320,7 +317,6 @@ bash sft_study/run_single/e2_ultrachat_matched.sh
 W&B 已在脚本中固定开启：
 
 ```bash
-bash sft_study/run_single/e2_prepare_ultrachat_token_match.sh
 bash sft_study/run_single/e2_no_robots_matched.sh
 bash sft_study/run_single/e2_ultrachat_matched.sh
 ```
@@ -534,7 +530,7 @@ bash sft_study/run_single/e5_tulu3_100k.sh
 
 1. `run_eval/e0_fixed_prompts_base.sh`
 2. `run_single/e1_no_robots_smoke.sh`
-3. `run_single/e2_prepare_ultrachat_token_match.sh && run_single/e2_no_robots_matched.sh && run_single/e2_ultrachat_matched.sh`
+3. `run_single/e2_no_robots_matched.sh && run_single/e2_ultrachat_matched.sh`
 
 这样你会最快建立两个核心直觉：
 
@@ -590,26 +586,21 @@ BENCHMARKS="ifeval gsm8k" \
 建议先安装基础依赖：
 
 ```bash
-pip install -r sft_study/requirements.txt
+bash sft_study/install.sh
 ```
 
-如果你是 Linux + NVIDIA，并且想额外启用 `flash-attn` 这类可选加速，先装前置依赖：
+如果你是 Linux + NVIDIA，并且想额外启用 `flash-attn` 这类可选加速，再跑一次带参数的安装脚本：
 
 ```bash
-pip install -r sft_study/requirements-extra.txt
-```
-
-再单独安装 `flash-attn`：
-
-```bash
-pip install flash-attn --no-build-isolation
+bash sft_study/install.sh --flash-attn
 ```
 
 说明：
 
-- `requirements.txt` 放基础训练与评估依赖，也包含 `wandb`
-- `requirements-extra.txt` 只放可选 GPU 加速前置依赖
-- `flash-attn` 需要单独安装，是因为它常常要配合 `--no-build-isolation`
+- `install.sh` 默认只装基础训练与评估依赖，也包含 `wandb`
+- `requirements.txt` 是底层依赖清单
+- `install.sh --flash-attn` 会额外安装 `ninja`、`packaging`、`psutil` 和 `flash-attn`
+- `flash-attn` 仍然通过 `--no-build-isolation` 安装
 - `flash-attn` 通常只建议在 Linux + CUDA 环境安装
 - 如果你是本机 macOS / CPU / MPS 环境，默认会退回普通 LoRA 配置，但速度会慢很多
 
