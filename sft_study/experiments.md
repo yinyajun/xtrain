@@ -228,8 +228,8 @@ OUTPUT_DIR=sft_study/outputs/e0_base_eval \
 数据：
 
 - `HuggingFaceH4/no_robots`
-- 训练：`train_sft`
-- 验证：`test_sft`
+- 训练：`train`
+- 验证：`test`
 
 脚本：
 

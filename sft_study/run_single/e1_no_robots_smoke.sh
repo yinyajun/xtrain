@@ -13,10 +13,10 @@ CMD=(
   --chat_template_path "$ROOT_DIR/chat_templates/qwen2_5_training.jinja" \
   --train_dataset "HuggingFaceH4/no_robots" \
   --train_dataset_config "" \
-  --train_split "train_sft" \
+  --train_split "train" \
   --eval_dataset "HuggingFaceH4/no_robots" \
   --eval_dataset_config "" \
-  --eval_split "test_sft" \
+  --eval_split "test" \
   --output_dir "$OUTPUT_DIR" \
   --run_name "e1_no_robots_smoke" \
   --max_train_samples 2000 \

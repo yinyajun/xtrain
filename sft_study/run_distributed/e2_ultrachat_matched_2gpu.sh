@@ -15,7 +15,7 @@ OUTPUT_DIR="$ROOT_DIR/outputs/e2_ultrachat_matched_$RUN_SUFFIX"
 python3 "$ROOT_DIR/scripts/dataset_utils.py" token-match \
   --model_name_or_path "$MODEL" \
   --reference_dataset "HuggingFaceH4/no_robots" \
-  --reference_split "train_sft" \
+  --reference_split "train" \
   --reference_max_samples 9500 \
   --candidate_dataset "HuggingFaceH4/ultrachat_200k" \
   --candidate_split "train_sft" \

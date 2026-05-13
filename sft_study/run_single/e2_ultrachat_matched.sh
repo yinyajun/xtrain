@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MODEL="${MODEL:-Qwen/Qwen2.5-7B}"
 TOKENIZER_PATH="${TOKENIZER_PATH:-}"
+SEED="${SEED:-42}"
 TRAIN_JSONL="${TRAIN_JSONL:-$ROOT_DIR/artifacts/datasets/e2_ultrachat_token_matched_train.jsonl}"
 ATTN_IMPLEMENTATION="${ATTN_IMPLEMENTATION:-}"
 OUTPUT_DIR="$ROOT_DIR/outputs/e2_ultrachat_matched"
@@ -11,7 +12,7 @@ OUTPUT_DIR="$ROOT_DIR/outputs/e2_ultrachat_matched"
 python3 "$ROOT_DIR/scripts/dataset_utils.py" token-match \
   --model_name_or_path "$MODEL" \
   --reference_dataset "HuggingFaceH4/no_robots" \
-  --reference_split "train_sft" \
+  --reference_split "train" \
   --reference_max_samples 9500 \
   --candidate_dataset "HuggingFaceH4/ultrachat_200k" \
   --candidate_split "train_sft" \
@@ -50,7 +51,7 @@ CMD=(
   --target_modules q_proj k_proj v_proj o_proj up_proj down_proj gate_proj lm_head \
   --report_to wandb \
   --gradient_checkpointing \
-  --seed 42
+  --seed "$SEED"
 )
 
 if [[ -n "$ATTN_IMPLEMENTATION" ]]; then
